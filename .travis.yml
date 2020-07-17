@@ -1,0 +1,58 @@
+# Git options
+git:
+  submodules: false
+
+branches:
+  only:
+    - master
+    - develop
+
+# Enable c++ support
+language: cpp
+
+services:
+  - docker
+
+# Compiler selection
+matrix:
+  include:
+      - name: "Ubuntu OpenMPI g++"
+        env: CC_COMPILER=gcc CXX_COMPILER=g++ TESTING_ENV=ubuntu_openmpi MPIEXEC_PREFLAGS="--allow-run-as-root --oversubscribe"
+
+      - name: "Ubuntu OpenMPI clang++"
+        env: CC_COMPILER=clang CXX_COMPILER=clang++ TESTING_ENV=ubuntu_openmpi MPIEXEC_PREFLAGS="--allow-run-as-root --oversubscribe"
+
+      - name: "Ubuntu MPICH g++"
+        env: CC_COMPILER=gcc CXX_COMPILER=g++ TESTING_ENV=ubuntu_mpich
+
+      - name: "Ubuntu MPICH clang++"
+        env: CC_COMPILER=clang CXX_COMPILER=clang++ TESTING_ENV=ubuntu_mpich
+
+      - name: "Debian OpenMPI g++"
+        env: CC_COMPILER=gcc CXX_COMPILER=g++ TESTING_ENV=debian_openmpi MPIEXEC_PREFLAGS="--allow-run-as-root --oversubscribe"
+
+      - name: "Debian OpenMPI clang++"
+        env: CC_COMPILER=clang CXX_COMPILER=clang++ TESTING_ENV=debian_openmpi MPIEXEC_PREFLAGS="--allow-run-as-root --oversubscribe"
+
+      - name: "Debian MPICH g++"
+        env: CC_COMPILER=gcc CXX_COMPILER=g++ TESTING_ENV=debian_mpich
+
+      - name: "Debian MPICH clang++"
+        env: CC_COMPILER=clang CXX_COMPILER=clang++ TESTING_ENV=debian_mpich
+
+install:
+  - echo ${TRAVIS_BRANCH}
+  - echo ${TRAVIS_PULL_REQUEST}
+  - echo $TRAVIS_PULL_REQUEST_BRANCH
+  - echo ${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}
+  - docker pull pierremarchand/htool_testing_environments:${TESTING_ENV}
+  - docker run -itd --name ${TESTING_ENV} pierremarchand/htool_testing_environments:${TESTING_ENV}
+  - docker exec -it ${TESTING_ENV} bash -c "cd && git clone https://github.com/hpddm/hpddm.git && cd hpddm && git checkout ce6ce80b62e9bc71efedf8b9cb6ffb00dfd6e44e && cd .."
+  - docker exec -it ${TESTING_ENV} bash -c "git clone --recurse-submodules --single-branch --branch ${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH} https://github.com/htool-ddm/htool_python.git"
+
+# Build steps
+script:
+  - docker exec -it -w /root/htool_python/ -e MPIEXEC_PREFLAGS="${MPIEXEC_PREFLAGS}" ${TESTING_ENV}  bash -c 'pip3 install .'
+  - docker exec -it -w /root/htool_python -e MPIEXEC_PREFLAGS="${MPIEXEC_PREFLAGS}" ${TESTING_ENV} bash -c 'mpirun -np 2 ${MPIEXEC_PREFLAGS} pytest tests'
+  - docker exec -it -w /root/htool_python -e MPIEXEC_PREFLAGS="${MPIEXEC_PREFLAGS}" ${TESTING_ENV} bash -c 'mpirun -np 3 ${MPIEXEC_PREFLAGS} pytest tests'
+  - docker exec -it -w /root/htool_python -e MPIEXEC_PREFLAGS="${MPIEXEC_PREFLAGS}" ${TESTING_ENV} bash -c 'mpirun -np 4 ${MPIEXEC_PREFLAGS} pytest tests'
