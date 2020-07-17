@@ -1,0 +1,9 @@
+[submodule "lib/htool"]
+	path = lib/htool
+	url = https://github.com/htool-ddm/htool.git
+[submodule "lib/hpddm"]
+	path = lib/hpddm
+	url = https://github.com/hpddm/hpddm.git
+[submodule "lib/pybind11"]
+	path = lib/pybind11
+	url = https://github.com/pybind/pybind11.git
