@@ -41,10 +41,6 @@ matrix:
         env: CC_COMPILER=clang CXX_COMPILER=clang++ TESTING_ENV=debian_mpich
 
 install:
-  - echo ${TRAVIS_BRANCH}
-  - echo ${TRAVIS_PULL_REQUEST}
-  - echo $TRAVIS_PULL_REQUEST_BRANCH
-  - echo ${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}
   - docker pull pierremarchand/htool_testing_environments:${TESTING_ENV}
   - docker run -itd --name ${TESTING_ENV} pierremarchand/htool_testing_environments:${TESTING_ENV}
   - docker exec -it ${TESTING_ENV} bash -c "cd && git clone https://github.com/hpddm/hpddm.git && cd hpddm && git checkout ce6ce80b62e9bc71efedf8b9cb6ffb00dfd6e44e && cd .."
