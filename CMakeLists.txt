@@ -40,15 +40,7 @@ separate_arguments(MPIEXEC_PREFLAGS) # to support multi flags
 
 # OPENMP
 find_package(OpenMP)
-if (OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-    message("-- OpenMP flags are " "${OpenMP_CXX_FLAGS}" )
-    message("-- OpenMP linker flags are " "${OpenMP_EXE_LINKER_FLAGS}" )
-else()
-    message("-- OpenMP not found")
-endif()
+
 
 # BLAS
 find_package(BLAS REQUIRED)
@@ -77,8 +69,9 @@ target_link_libraries(Htool PRIVATE
 					${MPI_LIBRARIES}
 					${BLAS_LIBRARIES}
 					${LAPACK_LIBRARIES}
-					${ARPACK_LIBRARIES})
+					${ARPACK_LIBRARIES}
+					${OpenMP_CXX_LIBRARIES})
 
-target_compile_options(Htool PRIVATE "-DPYTHON_INTERFACE")
+target_compile_definitions(Htool PRIVATE "-DPYTHON_INTERFACE" "-DWITH_HPDDM")
 
 # target_compile_features(Htool INTERFACE cxx_std_11)
