@@ -13,13 +13,15 @@ namespace py = pybind11;
 using namespace pybind11::literals;
 using namespace htool;
 
-template<typename T, template<typename,typename> class LowRankMatrix, class ClusterImpl>
+template<typename T, template<typename,typename> class LowRankMatrix, class ClusterImpl, template<typename> class AdmissibleCondition>
 void declare_HMatrix(py::module &m, const std::string& className) {
-    using Class = HMatrix<T, LowRankMatrix, ClusterImpl>;
+    using Class = HMatrix<T, LowRankMatrix, ClusterImpl,AdmissibleCondition>;
     py::class_<Class> py_class(m, className.c_str()) ;
 
     // Symmetric build
-    py_class.def(py::init<IMatrix<T>&,const std::vector<R3>&,bool, const int&,  MPI_Comm_wrapper>(),py::arg("mat"), py::arg("xt"), py::arg("Symmetry") = false, py::arg("reqrank") = -1, py::arg("comm")=MPI_Comm_wrapper(MPI_COMM_WORLD));
+    py_class.def(py::init<IMatrix<T>&,const std::vector<R3>&,char, char, const int&,  MPI_Comm_wrapper>(),py::arg("mat"), py::arg("xt"), py::arg("Symmetry") = 'N',py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm")=MPI_Comm_wrapper(MPI_COMM_WORLD));
+
+    py_class.def(py::init<IMatrix<T>&,const std::shared_ptr<Cluster<ClusterImpl>>&,const std::vector<R3>&,char,char, const int&,  MPI_Comm_wrapper>(),py::arg("mat"),py::arg("t"), py::arg("xt"), py::arg("Symmetry") = 'N',py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm")=MPI_Comm_wrapper(MPI_COMM_WORLD));
 
     // Non symmetric build
     py_class.def(py::init<IMatrix<T>&, const std::vector<R3>& , const std::vector<R3>&, const int&, MPI_Comm_wrapper>(),py::arg("mat"), py::arg("xt"),py::arg("xs"), py::arg("reqrank") = -1, py::arg("comm")=MPI_Comm_wrapper(MPI_COMM_WORLD));
@@ -80,8 +82,8 @@ void declare_HMatrix(py::module &m, const std::string& className) {
     // Plot pattern
     py_class.def("display",[](const Class &self){
         
-        const std::vector<LowRankMatrix<T,ClusterImpl>*>& lrmats = self.get_MyFarFieldMats();
-	    const std::vector<SubMatrix<T>*>& dmats = self.get_MyNearFieldMats();
+        const std::vector<std::unique_ptr<LowRankMatrix<T,ClusterImpl>>>& lrmats = self.get_MyFarFieldMats();
+	    const std::vector<std::unique_ptr<SubMatrix<T>>>& dmats = self.get_MyNearFieldMats();
 
         
 
@@ -203,7 +205,7 @@ void declare_HMatrix(py::module &m, const std::string& className) {
 
         if (rankworld==0){
             
-            Cluster<GeometricClustering> const * root ;
+            Cluster<ClusterImpl> const * root ;
             if (type=="target"){
                 root = &(self.get_cluster_tree_t());
             }
@@ -215,7 +217,7 @@ void declare_HMatrix(py::module &m, const std::string& className) {
                 return 0;
             }
             
-            std::stack< Cluster<GeometricClustering> const *> s;
+            std::stack< Cluster<ClusterImpl> const *> s;
             s.push(root);
 
             int size = root->get_size();
@@ -230,7 +232,7 @@ void declare_HMatrix(py::module &m, const std::string& className) {
 
             int counter = 0;
             while(!s.empty()){
-                Cluster<GeometricClustering> const * curr = s.top();
+                Cluster<ClusterImpl> const * curr = s.top();
                 s.pop();
 
                 if (depth == curr->get_depth()){

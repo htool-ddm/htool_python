@@ -1,5 +1,7 @@
 #include "matrix.hpp"
 #include "hmatrix.hpp"
+#include "cluster.hpp"
+#include "ddm_solver.hpp"
 
 
 PYBIND11_MODULE(Htool, m) {
@@ -15,8 +17,15 @@ PYBIND11_MODULE(Htool, m) {
 
     declare_IMatrix<double>(m,"IMatrix");
     declare_IMatrix<std::complex<double>>(m,"ComplexIMatrix");
+
+    declare_Cluster<GeometricClusteringDDM>(m,"Cluster");
+
     declare_SubMatrix<double>(m,"SubMatrix");
     declare_SubMatrix<std::complex<double>>(m,"ComplexSubMatrix");
-    declare_HMatrix<double,sympartialACA,GeometricClustering>(m, "HMatrix");
-    declare_HMatrix<std::complex<double>,sympartialACA,GeometricClustering>(m, "ComplexHMatrix");
+
+    declare_HMatrix<double,sympartialACA,GeometricClusteringDDM,RjasanowSteinbach>(m, "HMatrix");
+    declare_HMatrix<std::complex<double>,sympartialACA,GeometricClusteringDDM,RjasanowSteinbach>(m, "ComplexHMatrix");
+
+    declare_DDM<double,sympartialACA,GeometricClusteringDDM,RjasanowSteinbach>(m,"DDM");
+    declare_DDM<std::complex<double>,sympartialACA,GeometricClusteringDDM,RjasanowSteinbach>(m,"ComplexDDM");
 }

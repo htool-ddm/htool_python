@@ -4,7 +4,7 @@ import mpi4py
 import pytest
 
 
-class GeneratorCoef(Htool.IMatrix):
+class GeneratorCoef(Htool.ComplexIMatrix):
 
     def __init__(self,points_target,points_source):
         super().__init__(len(points_target),len(points_source))
@@ -12,24 +12,33 @@ class GeneratorCoef(Htool.IMatrix):
         self.points_source=points_source
 
     def get_coef(self, i , j):
-        return 1.0 / (1e-5 + np.linalg.norm(self.points_target[i, :] - self.points_source[j, :]))
+
+        return (1.0+1j*np.sign(i-j)) / (1e-5 + np.linalg.norm(self.points_target[i, :] - self.points_source[j, :]))
 
     def matvec(self,x):
-        y = np.zeros(self.nb_rows())
+        y = np.zeros(self.nb_rows(),dtype="complex128")
         for i in range(0,self.nb_rows()):
             for j in range(0,self.nb_cols()):
                 y[i]+=self.get_coef(i,j)*x[j]
         return y
 
     def matmat(self,X):
-        Y = np.zeros((self.nb_rows(), X.shape[1]))
+        Y = np.zeros((self.nb_rows(), X.shape[1]),dtype="complex128")
 
         for i in range(0,self.nb_rows()):
             for j in range(0,X.shape[1]):
                 for k in range(0,self.nb_cols()):
                     Y[i,j]+=self.get_coef(i, k)*X[k,j]
         return Y
-class GeneratorSubMatrix(Htool.IMatrix):
+    
+    def print(self):
+        matrix = np.zeros((self.nb_rows(),self.nb_cols()),dtype="complex128")
+        for i in range(0,self.nb_rows()):
+            for j in range(0,self.nb_cols()):
+                matrix[i,j]=self.get_coef(i,j)
+
+        print(matrix)
+class GeneratorSubMatrix(Htool.ComplexIMatrix):
 
     def __init__(self,points_target,points_source):
         super().__init__(len(points_target),len(points_source))
@@ -37,30 +46,35 @@ class GeneratorSubMatrix(Htool.IMatrix):
         self.points_source=points_source
 
     def get_coef(self, i , j):
-        return 1.0 / (1e-5 + np.linalg.norm(self.points_target[i, :] - self.points_source[j, :]))
+        return (1.0+1j*np.sign(i-j)) / (1e-5 + np.linalg.norm(self.points_target[i, :] - self.points_source[j, :]))
 
     def get_submatrix(self, J , K):
-        submat = np.zeros((len(J),len(K)),order="C")
+        submat = np.zeros((len(J),len(K)),order="C",dtype="complex128")
         for j in range(0,len(J)):
             for k in range(0,len(K)):
-                submat[j,k] = 1.0 / (1.e-5 + np.linalg.norm(self.points_target[J[j],:] - self.points_source[K[k], :])) 
-        return Htool.SubMatrix(J,K,submat)
+                submat[j,k] = (1.0+1j*np.sign(J[j]-K[k])) / (1.e-5 + np.linalg.norm(self.points_target[J[j],:] - self.points_source[K[k], :])) 
+        return Htool.ComplexSubMatrix(J,K,submat)
 
     def matvec(self,x):
-        y = np.zeros(self.nb_rows())
+        y = np.zeros(self.nb_rows(),dtype="complex128")
         for i in range(0,self.nb_rows()):
             for j in range(0,self.nb_cols()):
                 y[i]+=self.get_coef(i, j)*x[j]
         return y
 
     def matmat(self,X):
-        Y = np.zeros((self.nb_rows(), X.shape[1]))
+        Y = np.zeros((self.nb_rows(), X.shape[1]),dtype="complex128")
 
         for i in range(0,self.nb_rows()):
             for j in range(0,X.shape[1]):
                 for k in range(0,self.nb_cols()):
                     Y[i,j]+=self.get_coef(i,k)*X[k,j]
         return Y
+    def print(self):
+        matrix = np.zeros((self.nb_rows(),self.nb_cols()),dtype="complex128")
+        for i in range(0,self.nb_rows()):
+            for j in range(0,self.nb_cols()):
+                matrix[i,j]=self.get_coef(i,j)
 
 def FactoryGenerator(GeneratorType, points_target, points_source):
     if GeneratorType == "Coef":
@@ -70,22 +84,22 @@ def FactoryGenerator(GeneratorType, points_target, points_source):
 
 def FactoryHMatrix(Generator, points_target, points_source, Symmetric,UPLO):
     if Symmetric!='N':
-        return Htool.HMatrix(Generator, points_target, 'N')
+        return Htool.ComplexHMatrix(Generator, points_target, Symmetric,UPLO)
     else:
-        return Htool.HMatrix(Generator, points_target, points_source)
+        return Htool.ComplexHMatrix(Generator, points_target, points_source)
 
 
 @pytest.mark.parametrize("GeneratorType,NbRows,NbCols,Symmetric,UPLO", [
-    ("Coef",500, 500, 'S','L'),
-    ("Coef",500, 500, 'S','U'),
-    ("Coef",500, 500, 'N', 'N'),
-    ("Coef",500, 250, 'N', 'N'),
-    ("SubMatrix",500, 500, 'S','L'),
-    ("SubMatrix",500, 500, 'S','U'),
-    ("SubMatrix",500, 500, 'N', 'N'),
-    ("SubMatrix",500, 250, 'N', 'N'),
+    ("Coef",500, 500, 'H','L'),
+    ("Coef",500, 500, 'H','U'),
+    ("Coef",500, 500, 'N','N'),
+    ("Coef",500, 250, 'N','N'),
+    ("SubMatrix",500, 500, 'H','L'),
+    ("SubMatrix",500, 500, 'H','U'),
+    ("SubMatrix",500, 500, 'N','N'),
+    ("SubMatrix",500, 250, 'N','N'),
 ])
-def test_HMatrix(GeneratorType, NbRows, NbCols, Symmetric,UPLO):
+def test_Complex_HMatrix(GeneratorType, NbRows, NbCols, Symmetric,UPLO):
 
 
     # Random geometry
@@ -104,11 +118,11 @@ def test_HMatrix(GeneratorType, NbRows, NbCols, Symmetric,UPLO):
         points_source[:,2] = 0
     
     Htool.SetEta(1)
-    Htool.SetEpsilon(1e-3)
+    Htool.SetEpsilon(1e-6)
     Htool.SetMinClusterSize(10)
 
     Generator = FactoryGenerator(GeneratorType, points_target, points_source)
-
+    Generator.print()
     # Build
     HMatrix = FactoryHMatrix(Generator, points_target, points_source,Symmetric,UPLO)
 

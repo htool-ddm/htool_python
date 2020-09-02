@@ -45,8 +45,9 @@ Htool.SetMinClusterSize(10)
 
 # Build H matrix
 generator = Generator(points)
-symmetric = True
-HMatrix = Htool.HMatrix(generator,points,symmetric)
+symmetric = 'S'
+UPLO = 'L'
+HMatrix = Htool.HMatrix(generator,points,symmetric,UPLO)
 
 # Dense matrix
 Full_H = 1.0 / (1e-5 + norm(points.reshape(1, HMatrix.shape[1], 3) - points.reshape(HMatrix.shape[0], 1, 3), axis=2))
@@ -69,8 +70,7 @@ if rank==0:
     print("Error between the two solutions:", err_comp)
 
 # Several ways to display information
-if rank==0:
-    print(HMatrix)
+print(HMatrix)
 HMatrix.print_infos()
 HMatrix.display()
 HMatrix.display_cluster(points,2,"target")
