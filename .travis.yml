@@ -42,7 +42,7 @@ matrix:
 
 install:
   - docker pull pierremarchand/htool_testing_environments:${TESTING_ENV}
-  - docker run -itd --name ${TESTING_ENV} pierremarchand/htool_testing_environments:${TESTING_ENV}
+  - docker run --cap-add SYS_PTRACE -itd --name ${TESTING_ENV} pierremarchand/htool_testing_environments:${TESTING_ENV}
   - docker exec -it ${TESTING_ENV} bash -c "git clone --recurse-submodules --single-branch --branch ${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH} https://github.com/htool-ddm/htool_python.git"
 
 # Build steps

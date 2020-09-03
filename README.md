@@ -36,6 +36,12 @@ We mostly refer to `smallest_example.py` in the `examples` folder to see how to 
 
 A function that generates the coefficients must be provided to Htool. To do so, a class inheriting from `IMatrix` or `ComplexIMatrix` must be defined with a method `get_coef(i, j)`, where `i` and `j` are integers. This method will return the coefficient (i,j) of the considered problem. A method `get_submatrix` can also be defined to provide a more efficient way to build a sub-block of the matrix. This new class and the geometry will be used to define an object `HMatrix`.
 
+### Difference with C++
+
+**TL;DR** Due to Htool design and Python limitations, there is no shared parallelism for building hierarchical matrices. But shared parallelism is still used in the hierarchical matrix vector/matrix product.
+
+**Details** One feature of Htool is to take a function from the user to generate a hierarchical matrix. In the case of the Python interface, a Python function. Then, we loop over the blocks to build calling the user's function. In C++, we can use threads to accelerate this loop, but we cannot in Python because of the *Global Interpreter Lock*, which prevents several threads to call the user's function. One way to leverage this issue in terms of scaling is to use threading inside the function provided to Htool.
+
 ## Who is behind Htool?
 
 If you need help or have questions regarding Htool, feel free to contact [Pierre Marchand](https://www.ljll.math.upmc.fr/marchandp/) and Pierre-Henri Tournier.
