@@ -103,8 +103,9 @@ def test_HMatrix(GeneratorType, NbRows, NbCols, Symmetric,UPLO):
         points_source[:,1] = np.random.random(NbCols)
         points_source[:,2] = 0
     
+    epsilon = 1e-3
     Htool.SetEta(1)
-    Htool.SetEpsilon(1e-3)
+    Htool.SetEpsilon(epsilon)
     Htool.SetMinClusterSize(10)
 
     Generator = FactoryGenerator(GeneratorType, points_target, points_source)
@@ -120,14 +121,14 @@ def test_HMatrix(GeneratorType, NbRows, NbCols, Symmetric,UPLO):
     x = np.random.rand(NbCols)
     y_ref = Generator.matvec(x)
 
-    assert np.linalg.norm(HMatrix*x-y_ref)/np.linalg.norm(y_ref)<1e-3
-    assert np.linalg.norm(HMatrix.matvec(x)-y_ref)/np.linalg.norm(y_ref)<1e-3
-    assert np.linalg.norm(HMatrix@x-y_ref)/np.linalg.norm(y_ref)<1e-3
+    assert np.linalg.norm(HMatrix*x-y_ref)/np.linalg.norm(y_ref)<epsilon
+    assert np.linalg.norm(HMatrix.matvec(x)-y_ref)/np.linalg.norm(y_ref)<epsilon
+    assert np.linalg.norm(HMatrix@x-y_ref)/np.linalg.norm(y_ref)<epsilon
 
     X = np.random.rand(NbCols,3)
     Y_ref = Generator.matmat(X)
     Y = HMatrix@X
-    assert np.linalg.norm(HMatrix@X-Y_ref)/np.linalg.norm(Y_ref)<1e-3
+    assert np.linalg.norm(HMatrix@X-Y_ref)/np.linalg.norm(Y_ref)<epsilon
 
 
     # Print information
