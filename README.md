@@ -24,6 +24,13 @@ Htool is a header-only library written in C++11 with MPI and OpenMP, but it can 
 
 ### Installing
 
+First, you need to clone this repository with its submodules:
+
+```bash
+git clone https://github.com/htool-ddm/htool_python.git & cd htool_python
+git submodule update --init
+```
+
 In the folder of this repository, do:
 
 ```bash
