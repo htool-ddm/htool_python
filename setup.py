@@ -61,7 +61,7 @@ class CMakeBuild(build_ext):
 
 setup(
     name='Htool',
-    version='0.0.1',
+    version='1.0.0',
     author='Pierre Marchand',
     author_email='',
     description='A pybind11 interface to Htool, a header only c++ library that provides Hierarchical matrices.',
@@ -70,9 +70,9 @@ setup(
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
     install_requires=[
-          'numpy',
-          'scipy',
-          'mpi4py',
-          'matplotlib'
+          'numpy>=1.0.0',
+          'scipy>=1.0.0',
+          'mpi4py>=3.0.0',
+          'matplotlib>=3.0.0'
       ],
 )
