@@ -13,10 +13,8 @@ namespace py = pybind11;
 using namespace pybind11::literals;
 using namespace htool;
 
-template<typename T, template<typename,typename> class LowRankMatrix, class ClusterImpl, template<typename> class AdmissibleCondition>
-void declare_HMatrix(py::module &m, const std::string& className) {
-    using Class = HMatrix<T, LowRankMatrix, ClusterImpl,AdmissibleCondition>;
-    py::class_<Class> py_class(m, className.c_str()) ;
+template <typename... Args>
+using overload_cast_ = pybind11::detail::overload_cast_impl<Args...>;
 
     // Symmetric build
     py_class.def(py::init<IMatrix<T>&,const std::vector<R3>&,char, char, const int&,  MPI_Comm_wrapper>(),py::arg("mat"), py::arg("xt"), py::arg("Symmetry") = 'N',py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm")=MPI_Comm_wrapper(MPI_COMM_WORLD));
@@ -30,6 +28,10 @@ void declare_HMatrix(py::module &m, const std::string& className) {
     py_class.def_property_readonly("shape",[](const Class &self) {
         return std::array<int,2>{self.nb_rows(),self.nb_cols()};
     });
+    py_class.def("get_perm_t", overload_cast_<>()(&Class::get_permt, py::const_));
+    py_class.def("get_perm_s", overload_cast_<>()(&Class::get_perms, py::const_));
+    py_class.def("get_MasterOffset_t", overload_cast_<>()(&Class::get_MasterOffset_t, py::const_));
+    py_class.def("get_MasterOffset_s", overload_cast_<>()(&Class::get_MasterOffset_s, py::const_));
 
 
     // Linear algebra

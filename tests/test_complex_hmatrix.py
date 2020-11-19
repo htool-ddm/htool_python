@@ -131,6 +131,16 @@ def test_Complex_HMatrix(GeneratorType, NbRows, NbCols, Symmetric,UPLO):
     assert HMatrix.shape[0] == NbRows
     assert HMatrix.shape[1] == NbCols
 
+    assert len(HMatrix.get_perm_t())==NbRows
+    assert len(HMatrix.get_perm_s())==NbCols
+
+    MasterOffset_t = HMatrix.get_MasterOffset_t() 
+    MasterOffset_s = HMatrix.get_MasterOffset_s() 
+    assert len(MasterOffset_t)==mpi4py.MPI.COMM_WORLD.Get_size()
+    assert len(MasterOffset_s)==mpi4py.MPI.COMM_WORLD.Get_size()
+    assert sum([pair[1] for pair in MasterOffset_t])==NbRows
+    assert sum([pair[1] for pair in MasterOffset_s])==NbCols
+    
     # Linear algebra
     x = np.random.rand(NbCols)
     y_ref = Generator.matvec(x)
