@@ -94,7 +94,7 @@ def test_ddm_solver(mu,Symmetry):
     with open(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/"+folder+"/sol.bin"), "rb" ) as input:
         data=input.read()
         x_ref = np.frombuffer(data[4:],dtype=np.dtype('complex128'))
-    x = x =np.zeros(len(f),dtype="complex128", order="F")
+    x =np.zeros(len(f),dtype="complex128", order="F")
     if mu>1:
         x =np.zeros((len(f),mu),dtype="complex128", order="F")
 
