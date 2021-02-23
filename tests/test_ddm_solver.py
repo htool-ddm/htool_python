@@ -158,7 +158,6 @@ def test_ddm_solver(mu,Symmetry):
         print("RAS one level without overlap:")
     comm.Barrier()
     block_jacobi.set_hpddm_args("-hpddm_schwarz_method ras")
-    block_jacobi.facto_one_level()
     block_jacobi.solve(x,f)
     block_jacobi.print_infos()
     if mu==1:
@@ -184,7 +183,7 @@ def test_ddm_solver(mu,Symmetry):
     assert error < tol
     x.fill(0)
 
-    # DDM one level ASM wo overlap
+    # DDM one level ASM with overlap
     if rank==0:
         print("ASM one level with overlap:")
     comm.Barrier()
@@ -201,12 +200,11 @@ def test_ddm_solver(mu,Symmetry):
     assert error < tol
     x.fill(0)
 
-    # DDM one level ASM wo overlap
+    # DDM one level RAS with overlap
     if rank==0:
         print("RAS one level with overlap:")
     comm.Barrier()
     DDM_solver.set_hpddm_args("-hpddm_schwarz_method ras")
-    DDM_solver.facto_one_level()
     DDM_solver.solve(x,f)
     DDM_solver.print_infos()
     if mu==1:

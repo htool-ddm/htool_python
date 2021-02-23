@@ -31,10 +31,14 @@ void declare_DDM(py::module &m, const std::string &className) {
         .def(
             "solve", [](Class &self, py::array_t<T, py::array::f_style> x, const py::array_t<T, py::array::f_style | py::array::forcecast> b, std::string hpddm_args) {
                 htool::SetMinClusterSize(1);
+                int rank;
+                MPI_Comm_rank(self.get_comm(), &rank);
+
                 // HPDDM arguments
                 HPDDM::Option &opt = *HPDDM::Option::get();
                 opt.parse(hpddm_args);
-
+                if (rank != 0)
+                    opt.remove("verbosity");
                 int mu;
 
                 if (b.ndim() == 1 && x.ndim() == 1) {
@@ -73,8 +77,12 @@ void declare_DDM(py::module &m, const std::string &className) {
             py::arg("b"),
             py::arg("hpddm_args") = "")
         .def("set_hpddm_args", [](Class &self, std::string hpddm_args) {
+            int rank;
+            MPI_Comm_rank(self.get_comm(), &rank);
             HPDDM::Option &opt = *HPDDM::Option::get();
             opt.parse(hpddm_args);
+            if (rank != 0)
+                opt.remove("verbosity");
         })
         .def("print_infos", &Class::print_infos);
 }
