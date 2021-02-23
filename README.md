@@ -1,4 +1,4 @@
-# Python interface of Htool [![Build Status](https://travis-ci.com/htool-ddm/htool_python.svg?branch=master)](https://travis-ci.com/htool-ddm/htool_python)
+# Python interface of Htool [![CI](https://github.com/htool-ddm/htool_python/actions/workflows/CI.yml/badge.svg)](https://github.com/htool-ddm/htool_python/actions/workflows/CI.yml)
 
 ## What is Htool?
 
