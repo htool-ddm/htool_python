@@ -169,6 +169,10 @@ def test_ddm_solver(mu,Symmetry):
     assert error < tol
     x.fill(0)
 
+    # Check infos
+    if (mpi4py.MPI.COMM_WORLD.Get_rank()==0):
+        assert mpi4py.MPI.COMM_WORLD.Get_size()==int(block_jacobi.get_infos("Nb_subdomains"))
+
     # No precond with overlap
     if rank==0:
         print("No precond with overlap:")
@@ -215,3 +219,7 @@ def test_ddm_solver(mu,Symmetry):
         print(error)
     assert error < tol
     x.fill(0)
+
+    # Check infos
+    if (mpi4py.MPI.COMM_WORLD.Get_rank()==0):
+        assert mpi4py.MPI.COMM_WORLD.Get_size()==int(DDM_solver.get_infos("Nb_subdomains"))

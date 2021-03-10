@@ -62,6 +62,7 @@ x_ref = np.random.random(Size)
 b = hmat*x_ref
 x =np.zeros(Size)
 ddm_solver = Htool.DDM(hmat)
+ddm_solver.set_hpddm_args("-hpddm_verbosity 10 -hpddm_compute_residual l2")
 ddm_solver.facto_one_level()
 ddm_solver.solve(x,b)
 
@@ -71,6 +72,9 @@ hmat.print_infos()
 hmat.display()
 hmat.display_cluster(points_target,2,"target")
 ddm_solver.print_infos()
+
+nb_it = ddm_solver.get_infos("Nb_it")
+print("Nb_it",nb_it)
 
 if rank==0:
     print(np.linalg.norm(x-x_ref)/np.linalg.norm(x_ref))

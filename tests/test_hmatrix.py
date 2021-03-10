@@ -143,3 +143,4 @@ def test_HMatrix(GeneratorType, NbRows, NbCols, Symmetric,UPLO):
     # Print information
     HMatrix.print_infos()
     print(HMatrix)
+    assert mpi4py.MPI.COMM_WORLD.Get_size()==int(HMatrix.get_infos("Number_of_MPI_tasks"))

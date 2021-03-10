@@ -84,7 +84,8 @@ void declare_DDM(py::module &m, const std::string &className) {
             if (rank != 0)
                 opt.remove("verbosity");
         })
-        .def("print_infos", &Class::print_infos);
+        .def("print_infos", &Class::print_infos)
+        .def("get_infos", &Class::get_infos);
 }
 
 #endif

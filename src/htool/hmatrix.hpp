@@ -74,6 +74,7 @@ void declare_HMatrix(py::module &m, const std::string &className) {
 
     // Print information
     py_class.def("print_infos", &Class::print_infos);
+    py_class.def("get_infos", overload_cast_<const std::string &>()(&Class::get_infos, py::const_));
     py_class.def("__str__", [](const Class &self) {
         return "HMatrix: (shape: " + htool::NbrToStr(self.nb_cols()) + "x" + htool::NbrToStr(self.nb_rows()) + ", nb_low_rank_blocks: " + htool::NbrToStr(self.get_nlrmat()) + ", nb_dense_blocks: " + htool::NbrToStr(self.get_ndmat()) + ")";
     });
