@@ -79,6 +79,7 @@ print(np.linalg.norm(Y_1-Y_2)/np.linalg.norm(Y_2))
 # Several ways to display information
 HMatrix_test.print_infos()
 print(HMatrix_test)
+print("Number_of_MPI_tasks:",HMatrix_test.get_infos("Number_of_MPI_tasks"))
 HMatrix_test.display()
 HMatrix_test.display_cluster(points_target,2,"target")
 HMatrix_test.display_cluster(points_source,2,"source")
