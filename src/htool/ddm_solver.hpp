@@ -37,8 +37,6 @@ void declare_DDM(py::module &m, const std::string &className) {
                 // HPDDM arguments
                 HPDDM::Option &opt = *HPDDM::Option::get();
                 opt.parse(hpddm_args);
-                if (rank != 0)
-                    opt.remove("verbosity");
                 int mu;
 
                 if (b.ndim() == 1 && x.ndim() == 1) {
@@ -81,8 +79,6 @@ void declare_DDM(py::module &m, const std::string &className) {
             MPI_Comm_rank(self.get_comm(), &rank);
             HPDDM::Option &opt = *HPDDM::Option::get();
             opt.parse(hpddm_args);
-            if (rank != 0)
-                opt.remove("verbosity");
         })
         .def("print_infos", &Class::print_infos)
         .def("get_infos", &Class::get_infos);
