@@ -12,6 +12,9 @@ PYBIND11_MODULE(Htool, m) {
     m.def("SetEpsilon", &SetEpsilon);
     m.def("SetEta", &SetEta);
     m.def("SetMinClusterSize", &SetMinClusterSize);
+    m.def("SetMaxBlockSize", &SetMaxBlockSize);
+    m.def("SetMinTargetDepth", &SetMinTargetDepth);
+    m.def("SetMinSourceDepth", &SetMinSourceDepth);
 
     declare_IMatrix<double>(m, "IMatrix");
     declare_IMatrix<std::complex<double>>(m, "ComplexIMatrix");
