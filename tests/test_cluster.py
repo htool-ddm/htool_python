@@ -20,7 +20,7 @@ def test_cluster():
         A=np.transpose(A.reshape((m,n)))
 
     # mesh
-    p=np.zeros((n,3))
+    p=np.zeros((3,n))
     with open(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/mesh.msh"), "r" ) as input:
         check=False
         count=0
@@ -31,15 +31,15 @@ def test_cluster():
 
             if check and len(line.split())==4:
                 tab_line=line.split()
-                p[count][0]=tab_line[1]
-                p[count][1]=tab_line[2]
-                p[count][2]=tab_line[3]
+                p[0][count]=tab_line[1]
+                p[1][count]=tab_line[2]
+                p[2][count]=tab_line[3]
                 count+=1
 
             if line=="$Nodes\n":
                 check=True
 
     # Cluster
-    cluster = Htool.Cluster()
+    cluster = Htool.Cluster(3)
     cluster.read_cluster(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/cluster_"+str(size)+"_permutation.csv"),os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/cluster_"+str(size)+"_tree.csv"))
 

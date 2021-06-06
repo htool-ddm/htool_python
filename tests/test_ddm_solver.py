@@ -16,6 +16,11 @@ class GeneratorCoef(Htool.ComplexIMatrix):
     def get_coef(self, i , j):
         return self.matrix[i,j]
 
+    def build_submatrix(self, J , K, mat):
+        for j in range(0,len(J)):
+            for k in range(0,len(K)):
+                mat[j,k] = self.get_coef(J[j],K[k])
+
 @pytest.mark.parametrize("mu,Symmetry", [
     (1, 'S'),
     (10, 'S'),
@@ -31,8 +36,7 @@ def test_ddm_solver(mu,Symmetry):
 
     # Htool
     tol = 1e-6
-    Htool.SetEpsilon(tol)
-    Htool.SetEta(0.1)
+    eta = 0.1
 
     # args
     folder = "non_symmetric"
@@ -63,7 +67,7 @@ def test_ddm_solver(mu,Symmetry):
         f = rhs
 
     # mesh
-    p=np.zeros((n,3))
+    p=np.zeros((3,n))
     with open(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/"+folder+"/mesh.msh"), "r" ) as input:
         check=False
         count=0
@@ -74,21 +78,22 @@ def test_ddm_solver(mu,Symmetry):
 
             if check and len(line.split())==4:
                 tab_line=line.split()
-                p[count][0]=tab_line[1]
-                p[count][1]=tab_line[2]
-                p[count][2]=tab_line[3]
+                p[0][count]=tab_line[1]
+                p[1][count]=tab_line[2]
+                p[2][count]=tab_line[3]
                 count+=1
 
             if line=="$Nodes\n":
                 check=True
 
     # Cluster
-    cluster = Htool.Cluster()
+    cluster = Htool.Cluster(3)
     cluster.read_cluster(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/"+folder+"/cluster_"+str(size)+"_permutation.csv"),os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/"+folder+"/cluster_"+str(size)+"_tree.csv"))
 
     # Hmatrix
     generator = GeneratorCoef(A)
-    hmat = Htool.ComplexHMatrix(generator,cluster,p,Symmetry,UPLO)
+    hmat = Htool.ComplexHMatrix(cluster,cluster,tol,eta,Symmetry,UPLO)
+    hmat.build(generator,p)
 
     # Global vectors
     with open(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/"+folder+"/sol.bin"), "rb" ) as input:

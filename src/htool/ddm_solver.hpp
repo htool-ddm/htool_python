@@ -6,23 +6,24 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "htool/solvers/ddm.hpp"
+#include "matrix.hpp"
 #include "wrapper_mpi.hpp"
-#include <htool/htool.hpp>
 #include <string>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
 using namespace htool;
 
-template <typename T, template <typename, typename> class LowRankMatrix, class ClusterImpl, template <typename> class AdmissibleCondition>
+template <typename T>
 void declare_DDM(py::module &m, const std::string &className) {
 
-    using Class = DDM<T, LowRankMatrix, ClusterImpl, AdmissibleCondition>;
+    using Class = DDM<T>;
     py::class_<Class>(m, className.c_str())
-        .def(py::init<const HMatrix<T, LowRankMatrix, ClusterImpl, AdmissibleCondition> &>())
+        .def(py::init<const HMatrixVirtual<T> *const>())
         .def(py::init<
-             const IMatrix<T> &,
-             const HMatrix<T, LowRankMatrix, ClusterImpl, AdmissibleCondition> &,
+             const IMatrixCpp<T> &,
+             const HMatrixVirtual<T> *const,
              const std::vector<int> &,
              const std::vector<int> &,
              const std::vector<int> &,
@@ -30,7 +31,6 @@ void declare_DDM(py::module &m, const std::string &className) {
         .def("facto_one_level", &Class::facto_one_level)
         .def(
             "solve", [](Class &self, py::array_t<T, py::array::f_style> x, const py::array_t<T, py::array::f_style | py::array::forcecast> b, std::string hpddm_args) {
-                htool::SetMinClusterSize(1);
                 int rank;
                 MPI_Comm_rank(self.get_comm(), &rank);
 

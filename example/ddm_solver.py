@@ -10,19 +10,17 @@ rank = comm.Get_rank()
 class Generator(Htool.IMatrix):
 
     def __init__(self,points_target,points_source):
-        super().__init__(len(points_target),len(points_source))
+        super().__init__(points_target.shape[1],points_source.shape[1])
         self.points_target=points_target
         self.points_source=points_source
 
     def get_coef(self, i , j):
         return 1.0 / (1e-5 + np.linalg.norm(self.points_target[i, :] - self.points_source[j, :]))
 
-    def get_submatrix(self, J , K):
-        submat = np.zeros((len(J),len(K)),order="C")
+    def build_submatrix(self, J , K, mat):
         for j in range(0,len(J)):
             for k in range(0,len(K)):
-                submat[j,k] = 1.0 / (1.e-5 + np.linalg.norm(self.points_target[J[j],:] - self.points_source[K[k], :])) 
-        return Htool.SubMatrix(J,K,submat)
+                mat[j,k] = 1.0 / (1.e-5 + np.linalg.norm(self.points_target[:, J[j]] - self.points_source[:, K[k]])) 
 
     def mat_vec(self,x):
         y = np.zeros(self.nb_rows())
@@ -43,19 +41,20 @@ class Generator(Htool.IMatrix):
 # Random geometry
 Size = 500
 np.random.seed(0)
-points_target=np.zeros((Size,3))
-points_target[:,0] = np.random.random(Size)
-points_target[:,1] = np.random.random(Size)
-points_target[:,2] = 1
+points_target=np.zeros((2,Size))
+points_target[0,:] = np.random.random(Size)
+points_target[1,:] = np.random.random(Size)
 
 # Htool parameters
-Htool.SetEta(10)
-Htool.SetEpsilon(1e-3)
-Htool.SetMinClusterSize(5)
+eta = 10
+epsilon = 1e-3
+minclustersize = 5
 
 # Build H matrix
 generator = Generator(points_target,points_target)
-hmat = Htool.HMatrix(generator,points_target,'S','L')
+hmat = Htool.HMatrix(2,epsilon,eta,'S','L')
+hmat.set_minclustersize(5)
+hmat.build(generator,points_target)
 
 # Solver with block Jacobi
 x_ref = np.random.random(Size)

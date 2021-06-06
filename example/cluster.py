@@ -1,21 +1,30 @@
 import Htool
 import numpy as np
 
-# Random geometry
-NbRows = 500
-NbCols = 250
+# Parameters
+minclustersize = 5
+
+# Random 3D geometry
+Number_points = 500
 np.random.seed(0)
-points_target=np.zeros((NbRows,3))
-points_target[:,0] = np.random.random(NbRows)
-points_target[:,1] = np.random.random(NbRows)
-points_target[:,2] = 1
+points_3D=np.zeros((3,Number_points))
+points_3D[0,:] = np.random.random(Number_points)
+points_3D[1,:] = np.random.random(Number_points)
+points_3D[2,:] = np.random.random(Number_points)
 
-r = np.zeros(NbRows,dtype=float)
-g = np.zeros(NbRows,dtype=float)+1
-tab = np.arange(NbRows,dtype=int)
+# Cluster 3D
+cluster = Htool.Cluster(3)
+cluster.set_minclustersize(minclustersize)
+cluster.build(Number_points,points_3D,2)
+cluster.display(points_3D,2)
 
+# Random 2D geometry
+points_2D=np.zeros((2,Number_points))
+points_2D[0,:] = np.random.random(Number_points)
+points_2D[1,:] = np.random.random(Number_points)
 
-# Cluster
-cluster = Htool.Cluster()
-cluster.build(points_target, r, tab, g,2)
-cluster.display(points_target,2)
+# Cluster 2D
+cluster = Htool.Cluster(2)
+cluster.set_minclustersize(minclustersize)
+cluster.build(Number_points,points_2D,2)
+cluster.display(points_2D,2)

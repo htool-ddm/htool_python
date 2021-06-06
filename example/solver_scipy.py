@@ -8,18 +8,16 @@ from scipy.sparse.linalg import gmres
 class Generator(Htool.IMatrix):
 
     def __init__(self,points):
-        super().__init__(len(points),len(points))
+        super().__init__(points.shape[1],points.shape[1])
         self.points=points
 
     def get_coef(self, i , j):
-        return 1.0 / (1e-5 + np.linalg.norm(self.points[i, :] - self.points[j, :]))
+        return 1.0 / (1e-5 + np.linalg.norm(self.points[:, i] - self.points[:, j]))
 
-    def get_submatrix(self, J , K):
-        submat = np.zeros((len(J),len(K)),order="C")
+    def build_submatrix(self, J , K, mat):
         for j in range(0,len(J)):
             for k in range(0,len(K)):
-                submat[j,k] = 1.0 / (1.e-5 + np.linalg.norm(self.points[J[j],:] - self.points[K[k], :])) 
-        return Htool.SubMatrix(J,K,submat)
+                mat[j,k] = 1.0 / (1.e-5 + np.linalg.norm(self.points[:,J[j]] - self.points[: ,K[k]])) 
 
     def mat_vec(self,x):
         y = np.zeros(self.nb_rows())
@@ -33,25 +31,26 @@ class Generator(Htool.IMatrix):
 # SETUP
 # n² points on a regular grid in a square
 n = int(np.sqrt(4761))
-points = np.zeros((n*n, 3))
+points = np.zeros((2,n*n))
 for j in range(0, n):
     for k in range(0, n):
-        points[j+k*n, :] = (j, k, 1)
+        points[:,j+k*n] = (j, k)
 
 # Htool parameters
-Htool.SetEta(10)
-Htool.SetEpsilon(1e-3)
-Htool.SetMinClusterSize(10)
+eta = 10
+epsilon = 1e-3
+minclustersize = 10
 
 # Build H matrix
 generator = Generator(points)
 symmetric = 'S'
 UPLO = 'L'
-HMatrix = Htool.HMatrix(generator,points,symmetric,UPLO)
+HMatrix = Htool.HMatrix(2,epsilon,eta,symmetric,UPLO)
+HMatrix.set_minclustersize(minclustersize)
+HMatrix.build(generator,points)
 
 # Dense matrix
-Full_H = 1.0 / (1e-5 + norm(points.reshape(1, HMatrix.shape[1], 3) - points.reshape(HMatrix.shape[0], 1, 3), axis=2))
-
+Full_H = 1.0 / (1e-5 + norm(points.T.reshape(1, n*n, 2) - points.T.reshape(n*n, 1, 2), axis=2))
 
 # GMRES
 y = np.ones((n*n,))

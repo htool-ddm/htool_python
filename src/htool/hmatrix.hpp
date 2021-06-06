@@ -6,6 +6,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "matrix.hpp"
 #include "wrapper_mpi.hpp"
 #include <htool/htool.hpp>
 
@@ -17,17 +18,33 @@ template <typename... Args>
 using overload_cast_ = pybind11::detail::overload_cast_impl<Args...>;
 
 template <typename T, template <typename, typename> class LowRankMatrix, class ClusterImpl, template <typename> class AdmissibleCondition>
-void declare_HMatrix(py::module &m, const std::string &className) {
+void declare_HMatrix(py::module &m, const std::string &baseclassName, const std::string &className) {
+
+    py::class_<HMatrixVirtual<T>>(m, baseclassName.c_str());
+
     using Class = HMatrix<T, LowRankMatrix, ClusterImpl, AdmissibleCondition>;
-    py::class_<Class> py_class(m, className.c_str());
+    py::class_<Class, HMatrixVirtual<T>> py_class(m, className.c_str());
+
+    // Constructor
+    py_class.def(py::init<int, double, double, char, char, const int &, MPI_Comm_wrapper>(), py::arg("space_dim"), py::arg("epsilon") = 1e-6, py::arg("eta") = 10, py::arg("Symmetry") = 'N', py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
+
+    // Constructor with precomputed clusters
+    py_class.def(py::init<const std::shared_ptr<Cluster<ClusterImpl>> &, const std::shared_ptr<Cluster<ClusterImpl>> &, double, double, char, char, const int &, MPI_Comm_wrapper>(), py::arg("cluster_target"), py::arg("cluster_source"), py::arg("epsilon") = 1e-6, py::arg("eta") = 10, py::arg("Symmetry") = 'N', py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
 
     // Symmetric build
-    py_class.def(py::init<IMatrix<T> &, const std::vector<R3> &, char, char, const int &, MPI_Comm_wrapper>(), py::arg("mat"), py::arg("xt"), py::arg("Symmetry") = 'N', py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
+    py_class.def("build", [](Class &self, IMatrixCpp<T> &mat, const py::array_t<double, py::array::f_style> &xt, const py::array_t<double, py::array::f_style> &xs) {
+        self.build_auto(mat, xt.data(), xs.data());
+    });
 
-    py_class.def(py::init<IMatrix<T> &, const std::shared_ptr<Cluster<ClusterImpl>> &, const std::vector<R3> &, char, char, const int &, MPI_Comm_wrapper>(), py::arg("mat"), py::arg("t"), py::arg("xt"), py::arg("Symmetry") = 'N', py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
+    py_class.def("build", [](Class &self, IMatrixCpp<T> &mat, const py::array_t<double, py::array::f_style> &x) {
+        self.build_auto_sym(mat, x.data());
+    });
 
-    // Non symmetric build
-    py_class.def(py::init<IMatrix<T> &, const std::vector<R3> &, const std::vector<R3> &, const int &, MPI_Comm_wrapper>(), py::arg("mat"), py::arg("xt"), py::arg("xs"), py::arg("reqrank") = -1, py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
+    // Setters
+    py_class.def("set_minclustersize", &Class::set_minclustersize);
+    py_class.def("set_maxblocksize", &Class::set_maxblocksize);
+    py_class.def("set_minsourcedepth", &Class::set_minsourcedepth);
+    py_class.def("set_mintargetdepth", &Class::set_mintargetdepth);
 
     // Getters
     py_class.def_property_readonly("shape", [](const Class &self) {
@@ -61,7 +78,7 @@ void declare_HMatrix(py::module &m, const std::string &className) {
 
         std::vector<T> result(self.nb_rows() * mu, 0);
 
-        self.mvprod_global(B.data(), result.data(), mu);
+        self.mvprod_global_to_global(B.data(), result.data(), mu);
 
         if (B.ndim() == 1) {
             std::array<long int, 1> shape{self.nb_rows()};
@@ -195,7 +212,7 @@ void declare_HMatrix(py::module &m, const std::string &className) {
     // Plot clustering
 
     py_class.def(
-        "display_cluster", [](const Class &self, std::vector<R3> points_target, int depth, std::string type) {
+        "display_cluster", [](const Class &self, py::array_t<double, py::array::f_style | py::array::forcecast> points_target, int depth, std::string type) {
             int sizeworld = self.get_sizeworld();
             int rankworld = self.get_rankworld();
 
@@ -214,14 +231,15 @@ void declare_HMatrix(py::module &m, const std::string &className) {
                 std::stack<Cluster<ClusterImpl> const *> s;
                 s.push(root);
 
-                int size = root->get_size();
-                std::vector<double> output(4 * size);
+                int size      = root->get_size();
+                int space_dim = root->get_space_dim();
+                std::vector<double> output((space_dim + 1) * size);
 
                 // Permuted geometric points
                 for (int i = 0; i < size; ++i) {
-                    output[i]            = points_target[root->get_perm(i)][0];
-                    output[i + size]     = points_target[root->get_perm(i)][1];
-                    output[i + size * 2] = points_target[root->get_perm(i)][2];
+                    for (int p = 0; p < space_dim; p++) {
+                        output[i + size * p] = points_target.at(p, root->get_perm(i));
+                    }
                 }
 
                 int counter = 0;
@@ -230,7 +248,7 @@ void declare_HMatrix(py::module &m, const std::string &className) {
                     s.pop();
 
                     if (depth == curr->get_depth()) {
-                        std::fill_n(&(output[3 * size + curr->get_offset()]), curr->get_size(), counter);
+                        std::fill_n(&(output[space_dim * size + curr->get_offset()]), curr->get_size(), counter);
                         counter += 1;
                     }
 
@@ -246,17 +264,24 @@ void declare_HMatrix(py::module &m, const std::string &className) {
                 // Import
                 py::object plt    = py::module::import("matplotlib.pyplot");
                 py::object colors = py::module::import("matplotlib.colors");
-                py::object Axes3D = py::module::import("mpl_toolkits.mplot3d").attr("Axes3D");
 
                 // Create Color Map
                 py::object colormap = plt.attr("get_cmap")("Dark2");
-                py::object norm     = colors.attr("Normalize")("vmin"_a = (*std::min_element(output.begin() + 3 * size, output.end())), "vmax"_a = (*std::max_element(output.begin() + 3 * size, output.end())));
+                py::object norm     = colors.attr("Normalize")("vmin"_a = (*std::min_element(output.begin() + space_dim * size, output.end())), "vmax"_a = (*std::max_element(output.begin() + space_dim * size, output.end())));
 
                 // Figure
                 py::object fig = plt.attr("figure")();
-                py::object ax  = fig.attr("add_subplot")(111, "projection"_a = "3d");
 
-                ax.attr("scatter")(std::vector<double>(output.begin(), output.begin() + size), std::vector<double>(output.begin() + size, output.begin() + 2 * size), std::vector<double>(output.begin() + 2 * size, output.begin() + 3 * size), "c"_a = colormap(norm(std::vector<double>(output.begin() + 3 * size, output.end()))), "marker"_a = 'o');
+                if (space_dim == 2) {
+                    py::object ax = fig.attr("add_subplot")(111);
+                    ax.attr("scatter")(std::vector<double>(output.begin(), output.begin() + size), std::vector<double>(output.begin() + size, output.begin() + 2 * size), "c"_a = colormap(norm(std::vector<double>(output.begin() + 2 * size, output.end()))), "marker"_a = 'o');
+
+                } else if (space_dim == 3) {
+                    py::object Axes3D = py::module::import("mpl_toolkits.mplot3d").attr("Axes3D");
+
+                    py::object ax = fig.attr("add_subplot")(111, "projection"_a = "3d");
+                    ax.attr("scatter")(std::vector<double>(output.begin(), output.begin() + size), std::vector<double>(output.begin() + size, output.begin() + 2 * size), std::vector<double>(output.begin() + 2 * size, output.begin() + 3 * size), "c"_a = colormap(norm(std::vector<double>(output.begin() + 3 * size, output.end()))), "marker"_a = 'o');
+                }
 
                 plt.attr("show")();
                 return 0;

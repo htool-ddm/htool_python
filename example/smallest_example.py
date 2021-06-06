@@ -6,19 +6,17 @@ import mpi4py
 class Generator(Htool.IMatrix):
 
     def __init__(self,points_target,points_source):
-        super().__init__(len(points_target),len(points_source))
+        super().__init__(points_target.shape[1],points_source.shape[1])
         self.points_target=points_target
         self.points_source=points_source
 
     def get_coef(self, i , j):
-        return 1.0 / (1e-5 + np.linalg.norm(self.points_target[i, :] - self.points_source[j, :]))
+        return 1.0 / (1e-5 + np.linalg.norm(self.points_target[:,i] - self.points_source[:,j]))
 
-    def get_submatrix(self, J , K):
-        submat = np.zeros((len(J),len(K)),order="C")
+    def build_submatrix(self, J , K, mat):
         for j in range(0,len(J)):
             for k in range(0,len(K)):
-                submat[j,k] = 1.0 / (1.e-5 + np.linalg.norm(self.points_target[J[j],:] - self.points_source[K[k], :])) 
-        return Htool.SubMatrix(J,K,submat)
+                mat[j,k] = 1.0 / (1.e-5 + np.linalg.norm(self.points_target[:,J[j]] - self.points_source[:,K[k]])) 
 
     def mat_vec(self,x):
         y = np.zeros(self.nb_rows())
@@ -40,27 +38,27 @@ class Generator(Htool.IMatrix):
 NbRows = 500
 NbCols = 250
 np.random.seed(0)
-points_target=np.zeros((NbRows,3))
-points_target[:,0] = np.random.random(NbRows)
-points_target[:,1] = np.random.random(NbRows)
-points_target[:,2] = 1
+points_target=np.zeros((2,NbRows))
+points_target[0,:] = np.random.random(NbRows)
+points_target[1,:] = np.random.random(NbRows)
 
 if NbRows==NbCols:
     points_source=points_target
 else:
-    points_source=np.zeros((NbCols,3))
-    points_source[:,0] = np.random.random(NbCols)
-    points_source[:,1] = np.random.random(NbCols)
-    points_source[:,2] = 0
+    points_source=np.zeros((2,NbCols))
+    points_source[0,:] = np.random.random(NbCols)
+    points_source[1,:] = np.random.random(NbCols)
 
 # Htool parameters
-Htool.SetEta(10)
-Htool.SetEpsilon(1e-3)
-Htool.SetMinClusterSize(5)
+eta = 10
+epsilon = 1e-3
+minclustersize = 5
 
 # Build H matrix
 generator = Generator(points_target,points_source)
-HMatrix_test = Htool.HMatrix(generator,points_target,points_source)
+HMatrix_test = Htool.HMatrix(2,epsilon,eta)
+HMatrix_test.set_minclustersize(minclustersize)
+HMatrix_test.build(generator,points_target,points_source)
 
 # Test matrix vector product
 x = np.random.rand(NbCols)
