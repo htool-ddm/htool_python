@@ -39,7 +39,7 @@ for j in range(0, n):
 # Htool parameters
 eta = 10
 epsilon = 1e-3
-minclustersize = 10
+minclustersize = 25
 
 # Build H matrix
 generator = Generator(points)

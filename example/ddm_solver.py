@@ -46,14 +46,14 @@ points_target[0,:] = np.random.random(Size)
 points_target[1,:] = np.random.random(Size)
 
 # Htool parameters
-eta = 10
+eta = 5
 epsilon = 1e-3
-minclustersize = 5
+minclustersize = 10
 
 # Build H matrix
 generator = Generator(points_target,points_target)
 hmat = Htool.HMatrix(2,epsilon,eta,'S','L')
-hmat.set_minclustersize(5)
+hmat.set_minclustersize(minclustersize)
 hmat.build(generator,points_target)
 
 # Solver with block Jacobi

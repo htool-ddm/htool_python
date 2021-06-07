@@ -34,30 +34,49 @@ class Generator(Htool.IMatrix):
                     Y[i,j]+=self.get_coef(i, k)*X[k,j]
         return Y
 
-# Random geometry
-NbRows = 500
-NbCols = 250
-np.random.seed(0)
-points_target=np.zeros((2,NbRows))
-points_target[0,:] = np.random.random(NbRows)
-points_target[1,:] = np.random.random(NbRows)
-
-if NbRows==NbCols:
-    points_source=points_target
-else:
-    points_source=np.zeros((2,NbCols))
-    points_source[0,:] = np.random.random(NbCols)
-    points_source[1,:] = np.random.random(NbCols)
-
 # Htool parameters
 eta = 10
 epsilon = 1e-3
 minclustersize = 10
 
+# Random geometry
+NbRows = 500
+NbCols = 500
+np.random.seed(0)
+points_target=np.zeros((2,NbRows))
+sizeworld = mpi4py.MPI.COMM_WORLD.Get_size()
+local_size=int(NbRows/sizeworld)
+MasterOffset=np.zeros((2,sizeworld))
+for i in range(0,sizeworld-1):
+    MasterOffset[0,i]=i*local_size
+    MasterOffset[1,i]=local_size
+    points_target[0,i*local_size:(i+1)*local_size] = i
+
+points_target[0,(sizeworld-1)*local_size:] = sizeworld-1
+MasterOffset[0,sizeworld-1]=(sizeworld-1)*local_size
+MasterOffset[1,sizeworld-1]=NbRows-(sizeworld-1)*local_size
+
+points_target[1,:] = np.random.random(NbRows)
+
+# Cluster target
+cluster_target = Htool.Cluster(2)
+cluster_target.set_minclustersize(minclustersize)
+cluster_target.build(NbRows,points_target,MasterOffset,2)
+
+if NbRows==NbCols:
+    points_source=points_target
+    cluster_source=cluster_target
+else:
+    points_source=np.zeros((2,NbCols))
+    points_source[0,:] = np.random.random(NbCols)
+    points_source[1,:] = np.random.random(NbCols)
+    cluster_source = None
+
+
+
 # Build H matrix
 generator = Generator(points_target,points_source)
-HMatrix_test = Htool.HMatrix(2,epsilon,eta)
-HMatrix_test.set_minclustersize(minclustersize)
+HMatrix_test = Htool.HMatrix(cluster_target,cluster_source,epsilon,eta)
 HMatrix_test.build(generator,points_target,points_source)
 
 # Test matrix vector product

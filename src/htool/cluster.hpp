@@ -29,6 +29,21 @@ void declare_Cluster(py::module &m, const std::string &className) {
         "nb_sons"_a     = 2,
         py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
     py_class.def(
+        "build", [](Cluster<ClusterType> &self, int nb_pt, py::array_t<double, py::array::f_style | py::array::forcecast> x, py::array_t<int, py::array::f_style | py::array::forcecast> MasterOffset, int nb_sons, MPI_Comm_wrapper comm) {
+            if (x.ndim() != 2 && x.shape()[0] != self.get_space_dim()) {
+                throw std::runtime_error("Wrong dimension for x");
+            }
+            if (MasterOffset.ndim() != 2 && MasterOffset.shape()[0] != 2) {
+                throw std::runtime_error("Wrong dimension for MasterOffset");
+            }
+            self.build_local_auto(nb_pt, x.data(), MasterOffset.data(), nb_sons, comm);
+        },
+        "nb_pt"_a,
+        "x"_a,
+        "MasterOffset"_a,
+        "nb_sons"_a     = 2,
+        py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
+    py_class.def(
         "display", [](Cluster<ClusterType> &self, py::array_t<double, py::array::f_style | py::array::forcecast> x, int depth, MPI_Comm_wrapper comm) {
             int rankWorld;
             MPI_Comm_rank(comm, &rankWorld);
