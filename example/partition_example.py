@@ -59,7 +59,7 @@ MasterOffset[1,sizeworld-1]=NbRows-(sizeworld-1)*local_size
 points_target[1,:] = np.random.random(NbRows)
 
 # Cluster target
-cluster_target = Htool.Cluster(2)
+cluster_target = Htool.PCARegularClustering(2)
 cluster_target.set_minclustersize(minclustersize)
 cluster_target.build(NbRows,points_target,MasterOffset,2)
 

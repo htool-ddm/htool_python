@@ -30,16 +30,6 @@ class PyIMatrix : public IMatrixCpp<T> {
     // PyIMatrix(int nr0, int nc0): IMatrix<T>(nr0,nc0){}
 
     /* Trampoline (need one for each virtual function) */
-    T get_coef(const int &i, const int &j) const override {
-        PYBIND11_OVERLOAD_PURE(
-            T,             /* Return type */
-            IMatrixCpp<T>, /* Parent class */
-            get_coef,      /* Name of function in C++ (must match Python name) */
-            i,
-            j /* Argument(s) */
-        );
-    }
-
     virtual void build_submatrix(const std::vector<int> &J, const std::vector<int> &K, py::array_t<T, py::array::f_style> &mat) const override {
         PYBIND11_OVERLOAD(
             void,            /* Return type */
@@ -57,8 +47,7 @@ void declare_IMatrix(py::module &m, const std::string &className) {
     using Class = IMatrixCpp<T>;
     py::class_<Class, PyIMatrix<T>>(m, className.c_str())
         .def(py::init<int, int>())
-        .def("get_coef", &Class::get_coef)
-        .def("build_submatrix", &Class::get_coef)
+        .def("build_submatrix", &Class::build_submatrix)
         .def("nb_rows", &Class::nb_rows)
         .def("nb_cols", &Class::nb_cols);
 }

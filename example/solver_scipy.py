@@ -45,8 +45,10 @@ minclustersize = 25
 generator = Generator(points)
 symmetric = 'S'
 UPLO = 'L'
-HMatrix = Htool.HMatrix(2,epsilon,eta,symmetric,UPLO)
-HMatrix.set_minclustersize(minclustersize)
+cluster = Htool.PCARegularClustering(2)
+cluster.build(n*n,points,2)
+cluster.set_minclustersize(minclustersize)
+HMatrix = Htool.HMatrix(cluster,cluster,epsilon,eta,symmetric,UPLO)
 HMatrix.build(generator,points)
 
 # Dense matrix

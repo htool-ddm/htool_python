@@ -71,8 +71,19 @@ def test_Complex_HMatrix( NbRows, NbCols, Symmetric,UPLO):
     Generator = GeneratorSubMatrix(points_target, points_source)
 
     # Build
-    HMatrix = Htool.ComplexHMatrix(3,epsilon,eta,Symmetric,UPLO)
-    HMatrix.set_minclustersize(minclustersize)
+    cluster_target = Htool.PCARegularClustering(3)
+    cluster_source = Htool.PCARegularClustering(3)
+    cluster_target.set_minclustersize(minclustersize)
+    cluster_target.build(NbRows, points_target,2)
+
+    if Symmetric!='N':
+        cluster_source=cluster_target
+    else:
+        cluster_source.set_minclustersize(minclustersize)
+        cluster_source.build(NbCols, points_source,2)
+
+
+    HMatrix = Htool.ComplexHMatrix(cluster_target,cluster_source,epsilon,eta,Symmetric,UPLO)
 
     if Symmetric!='N':
         HMatrix.build(Generator, points_target)
