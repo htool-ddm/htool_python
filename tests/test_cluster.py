@@ -40,6 +40,6 @@ def test_cluster():
                 check=True
 
     # Cluster
-    cluster = Htool.Cluster(3)
+    cluster = Htool.PCARegularClustering(3)
     cluster.read_cluster(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/cluster_"+str(size)+"_permutation.csv"),os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/cluster_"+str(size)+"_tree.csv"))
 

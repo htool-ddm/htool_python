@@ -17,7 +17,7 @@ points_3D[2,:] = np.random.random(Number_points)
 
 
 # Cluster 3D
-cluster = Htool.Cluster(3)
+cluster = Htool.PCARegularClustering(3)
 cluster.set_minclustersize(minclustersize)
 cluster.build(Number_points,points_3D,2)
 cluster.display(points_3D,1)
@@ -37,7 +37,7 @@ MasterOffset[0,sizeworld-1]=(sizeworld-1)*local_size
 MasterOffset[1,sizeworld-1]=Number_points-(sizeworld-1)*local_size
 
 
-cluster = Htool.Cluster(3)
+cluster = Htool.PCARegularClustering(3)
 cluster.set_minclustersize(minclustersize)
 cluster.build(Number_points,points_3D,MasterOffset,2)
 cluster.display(points_3D,1)
@@ -49,7 +49,7 @@ points_2D[0,:] = np.random.random(Number_points)
 points_2D[1,:] = np.random.random(Number_points)
 
 # Cluster 2D
-cluster = Htool.Cluster(2)
+cluster = Htool.PCARegularClustering(2)
 cluster.set_minclustersize(minclustersize)
 cluster.build(Number_points,points_2D,2)
 cluster.display(points_2D,1)

@@ -3,9 +3,6 @@ import numpy as np
 import pytest
 
 class GeneratorSubMatrix(Htool.IMatrix):
-    def get_coef(self, i , j):
-        return i+j
-
     def build_submatrix(self,J,K,mat):
         for j in range(0,len(J)):
             for k in range(0,len(K)):
@@ -21,6 +18,5 @@ def test_IMatrix(NbRows, NbCols):
     print(generator.build_submatrix(np.array([1, 2]), np.array([1, 2]),mat))
     assert generator.nb_cols() == NbCols
     assert generator.nb_rows() == NbRows
-    assert generator.get_coef(2, 2) == 4
     generator.build_submatrix(np.array([1, 2]), np.array([1, 2]),mat)
     assert ( mat == np.array([[2, 3], [3, 4]])).all()

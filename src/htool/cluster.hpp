@@ -15,28 +15,29 @@ using namespace htool;
 
 template <typename ClusterType>
 void declare_Cluster(py::module &m, const std::string &className) {
-    py::class_<Cluster<ClusterType>, std::shared_ptr<Cluster<ClusterType>>> py_class(m, className.c_str());
+
+    py::class_<ClusterType, std::shared_ptr<ClusterType>, VirtualCluster> py_class(m, className.c_str());
     py_class.def(py::init<int>());
     py_class.def(
-        "build", [](Cluster<ClusterType> &self, int nb_pt, py::array_t<double, py::array::f_style | py::array::forcecast> x, int nb_sons, MPI_Comm_wrapper comm) {
+        "build", [](ClusterType &self, int nb_pt, py::array_t<double, py::array::f_style | py::array::forcecast> x, int nb_sons, MPI_Comm_wrapper comm) {
             if (x.ndim() != 2 && x.shape()[0] != self.get_space_dim()) {
                 throw std::runtime_error("Wrong dimension for x");
             }
-            self.build_global_auto(nb_pt, x.data(), nb_sons, comm);
+            self.build(nb_pt, x.data(), nb_sons, comm);
         },
         "nb_pt"_a,
         "x"_a,
         "nb_sons"_a     = 2,
         py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
     py_class.def(
-        "build", [](Cluster<ClusterType> &self, int nb_pt, py::array_t<double, py::array::f_style | py::array::forcecast> x, py::array_t<int, py::array::f_style | py::array::forcecast> MasterOffset, int nb_sons, MPI_Comm_wrapper comm) {
+        "build", [](ClusterType &self, int nb_pt, py::array_t<double, py::array::f_style | py::array::forcecast> x, py::array_t<int, py::array::f_style | py::array::forcecast> MasterOffset, int nb_sons, MPI_Comm_wrapper comm) {
             if (x.ndim() != 2 && x.shape()[0] != self.get_space_dim()) {
                 throw std::runtime_error("Wrong dimension for x");
             }
             if (MasterOffset.ndim() != 2 && MasterOffset.shape()[0] != 2) {
                 throw std::runtime_error("Wrong dimension for MasterOffset");
             }
-            self.build_local_auto(nb_pt, x.data(), MasterOffset.data(), nb_sons, comm);
+            self.build(nb_pt, x.data(), MasterOffset.data(), nb_sons, comm);
         },
         "nb_pt"_a,
         "x"_a,
@@ -44,15 +45,15 @@ void declare_Cluster(py::module &m, const std::string &className) {
         "nb_sons"_a     = 2,
         py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
     py_class.def(
-        "display", [](Cluster<ClusterType> &self, py::array_t<double, py::array::f_style | py::array::forcecast> x, int depth, MPI_Comm_wrapper comm) {
+        "display", [](ClusterType &self, py::array_t<double, py::array::f_style | py::array::forcecast> x, int depth, MPI_Comm_wrapper comm) {
             int rankWorld;
             MPI_Comm_rank(comm, &rankWorld);
 
             if (rankWorld == 0) {
 
-                Cluster<ClusterType> const *root = &(self.get_root());
+                VirtualCluster const *root = self.get_root();
 
-                std::stack<Cluster<ClusterType> const *> s;
+                std::stack<VirtualCluster const *> s;
                 s.push(root);
 
                 int size      = root->get_size();
@@ -68,7 +69,7 @@ void declare_Cluster(py::module &m, const std::string &className) {
 
                 int counter = 0;
                 while (!s.empty()) {
-                    Cluster<ClusterType> const *curr = s.top();
+                    VirtualCluster const *curr = s.top();
                     s.pop();
 
                     if (depth == curr->get_depth()) {
@@ -117,14 +118,14 @@ void declare_Cluster(py::module &m, const std::string &className) {
         "depth"_a,
         py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
     py_class.def(
-        "read_cluster", [](Cluster<ClusterType> &self, std::string file_permutation, std::string file_tree, MPI_Comm_wrapper comm) {
+        "read_cluster", [](ClusterType &self, std::string file_permutation, std::string file_tree, MPI_Comm_wrapper comm) {
             self.read_cluster(file_permutation, file_tree, comm);
         },
         py::arg("file_permutation"),
         py::arg("file_tree"),
         py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
 
-    py_class.def("set_minclustersize", &Cluster<ClusterType>::set_minclustersize);
+    py_class.def("set_minclustersize", &ClusterType::set_minclustersize);
 }
 
 #endif

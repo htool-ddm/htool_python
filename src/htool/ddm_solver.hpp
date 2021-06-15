@@ -20,10 +20,10 @@ void declare_DDM(py::module &m, const std::string &className) {
 
     using Class = DDM<T>;
     py::class_<Class>(m, className.c_str())
-        .def(py::init<const HMatrixVirtual<T> *const>())
+        .def(py::init<const VirtualHMatrix<T> *const>())
         .def(py::init<
              const IMatrixCpp<T> &,
-             const HMatrixVirtual<T> *const,
+             const VirtualHMatrix<T> *const,
              const std::vector<int> &,
              const std::vector<int> &,
              const std::vector<int> &,

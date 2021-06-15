@@ -54,10 +54,18 @@ eta = 10
 epsilon = 1e-3
 minclustersize = 10
 
+# Build clusters
+dimension = 2
+cluster_target = Htool.PCARegularClustering(dimension)
+cluster_source = Htool.PCARegularClustering(dimension)
+cluster_target.build(NbRows,points_target,2)
+cluster_source.build(NbCols,points_source,2)
+cluster_target.set_minclustersize(minclustersize)
+cluster_source.set_minclustersize(minclustersize)
+
 # Build H matrix
 generator = Generator(points_target,points_source)
-HMatrix_test = Htool.HMatrix(2,epsilon,eta)
-HMatrix_test.set_minclustersize(minclustersize)
+HMatrix_test = Htool.HMatrix(cluster_target,cluster_source,epsilon,eta)
 HMatrix_test.build(generator,points_target,points_source)
 
 # Test matrix vector product

@@ -52,8 +52,10 @@ minclustersize = 10
 
 # Build H matrix
 generator = Generator(points_target,points_target)
-hmat = Htool.HMatrix(2,epsilon,eta,'S','L')
-hmat.set_minclustersize(minclustersize)
+cluster = Htool.PCARegularClustering(2)
+cluster.build(Size,points_target,2)
+cluster.set_minclustersize(minclustersize)
+hmat = Htool.HMatrix(cluster,cluster,epsilon,eta,'S','L')
 hmat.build(generator,points_target)
 
 # Solver with block Jacobi

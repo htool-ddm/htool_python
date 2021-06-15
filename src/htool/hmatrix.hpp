@@ -17,19 +17,16 @@ using namespace htool;
 template <typename... Args>
 using overload_cast_ = pybind11::detail::overload_cast_impl<Args...>;
 
-template <typename T, template <typename, typename> class LowRankMatrix, class ClusterImpl, template <typename> class AdmissibleCondition>
+template <typename T, template <typename> class LowRankMatrix, class AdmissibleCondition>
 void declare_HMatrix(py::module &m, const std::string &baseclassName, const std::string &className) {
 
-    py::class_<HMatrixVirtual<T>>(m, baseclassName.c_str());
+    py::class_<VirtualHMatrix<T>>(m, baseclassName.c_str());
 
-    using Class = HMatrix<T, LowRankMatrix, ClusterImpl, AdmissibleCondition>;
-    py::class_<Class, HMatrixVirtual<T>> py_class(m, className.c_str());
-
-    // Constructor
-    py_class.def(py::init<int, double, double, char, char, const int &, MPI_Comm_wrapper>(), py::arg("space_dim"), py::arg("epsilon") = 1e-6, py::arg("eta") = 10, py::arg("Symmetry") = 'N', py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
+    using Class = HMatrix<T, LowRankMatrix, AdmissibleCondition>;
+    py::class_<Class, VirtualHMatrix<T>> py_class(m, className.c_str());
 
     // Constructor with precomputed clusters
-    py_class.def(py::init<const std::shared_ptr<Cluster<ClusterImpl>> &, const std::shared_ptr<Cluster<ClusterImpl>> &, double, double, char, char, const int &, MPI_Comm_wrapper>(), py::arg("cluster_target"), py::arg("cluster_source"), py::arg("epsilon") = 1e-6, py::arg("eta") = 10, py::arg("Symmetry") = 'N', py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
+    py_class.def(py::init<const std::shared_ptr<VirtualCluster> &, const std::shared_ptr<VirtualCluster> &, double, double, char, char, const int &, MPI_Comm_wrapper>(), py::arg("cluster_target"), py::arg("cluster_source"), py::arg("epsilon") = 1e-6, py::arg("eta") = 10, py::arg("Symmetry") = 'N', py::arg("UPLO") = 'N', py::arg("reqrank") = -1, py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
 
     // Symmetric build
     py_class.def("build", [](Class &self, IMatrixCpp<T> &mat, const py::array_t<double, py::array::f_style> &xt, const py::array_t<double, py::array::f_style> &xs) {
@@ -41,7 +38,6 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
     });
 
     // Setters
-    py_class.def("set_minclustersize", &Class::set_minclustersize);
     py_class.def("set_maxblocksize", &Class::set_maxblocksize);
     py_class.def("set_minsourcedepth", &Class::set_minsourcedepth);
     py_class.def("set_mintargetdepth", &Class::set_mintargetdepth);
@@ -98,8 +94,8 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
 
     // Plot pattern
     py_class.def("display", [](const Class &self) {
-        const std::vector<std::unique_ptr<LowRankMatrix<T, ClusterImpl>>> &lrmats = self.get_MyFarFieldMats();
-        const std::vector<std::unique_ptr<SubMatrix<T>>> &dmats                   = self.get_MyNearFieldMats();
+        const std::vector<std::unique_ptr<LowRankMatrix<T>>> &lrmats = self.get_MyFarFieldMats();
+        const std::vector<std::unique_ptr<SubMatrix<T>>> &dmats      = self.get_MyNearFieldMats();
 
         int nb        = dmats.size() + lrmats.size();
         int sizeworld = self.get_sizeworld();
@@ -124,12 +120,12 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
         }
 
         for (int i = 0; i < lrmats.size(); i++) {
-            const LowRankMatrix<T, ClusterImpl> &l = *(lrmats[i]);
-            buf[5 * (dmats.size() + i)]            = l.get_offset_i();
-            buf[5 * (dmats.size() + i) + 1]        = l.nb_rows();
-            buf[5 * (dmats.size() + i) + 2]        = l.get_offset_j();
-            buf[5 * (dmats.size() + i) + 3]        = l.nb_cols();
-            buf[5 * (dmats.size() + i) + 4]        = l.rank_of();
+            const LowRankMatrix<T> &l       = *(lrmats[i]);
+            buf[5 * (dmats.size() + i)]     = l.get_offset_i();
+            buf[5 * (dmats.size() + i) + 1] = l.nb_rows();
+            buf[5 * (dmats.size() + i) + 2] = l.get_offset_j();
+            buf[5 * (dmats.size() + i) + 3] = l.nb_cols();
+            buf[5 * (dmats.size() + i) + 4] = l.rank_of();
         }
 
         int displs[sizeworld];
@@ -218,7 +214,7 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
 
             if (rankworld == 0) {
 
-                Cluster<ClusterImpl> const *root;
+                VirtualCluster const *root;
                 if (type == "target") {
                     root = &(self.get_cluster_tree_t());
                 } else if (type == "source") {
@@ -228,7 +224,7 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
                     return 0;
                 }
 
-                std::stack<Cluster<ClusterImpl> const *> s;
+                std::stack<VirtualCluster const *> s;
                 s.push(root);
 
                 int size      = root->get_size();
@@ -244,7 +240,7 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
 
                 int counter = 0;
                 while (!s.empty()) {
-                    Cluster<ClusterImpl> const *curr = s.top();
+                    VirtualCluster const *curr = s.top();
                     s.pop();
 
                     if (depth == curr->get_depth()) {
