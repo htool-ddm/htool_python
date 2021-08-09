@@ -6,6 +6,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "misc.hpp"
 #include "wrapper_mpi.hpp"
 #include <htool/htool.hpp>
 
@@ -21,7 +22,7 @@ void declare_Cluster(py::module &m, const std::string &className) {
     py_class.def(
         "build", [](ClusterType &self, int nb_pt, py::array_t<double, py::array::f_style | py::array::forcecast> x, int nb_sons, MPI_Comm_wrapper comm) {
             if (x.ndim() != 2 && x.shape()[0] != self.get_space_dim()) {
-                throw std::runtime_error("Wrong dimension for x");
+                throw std::runtime_error("Wrong dimension for x"); // LCOV_EXCL_LINE
             }
             self.build(nb_pt, x.data(), nb_sons, comm);
         },
@@ -32,10 +33,10 @@ void declare_Cluster(py::module &m, const std::string &className) {
     py_class.def(
         "build", [](ClusterType &self, int nb_pt, py::array_t<double, py::array::f_style | py::array::forcecast> x, py::array_t<int, py::array::f_style | py::array::forcecast> MasterOffset, int nb_sons, MPI_Comm_wrapper comm) {
             if (x.ndim() != 2 && x.shape()[0] != self.get_space_dim()) {
-                throw std::runtime_error("Wrong dimension for x");
+                throw std::runtime_error("Wrong dimension for x"); // LCOV_EXCL_LINE
             }
             if (MasterOffset.ndim() != 2 && MasterOffset.shape()[0] != 2) {
-                throw std::runtime_error("Wrong dimension for MasterOffset");
+                throw std::runtime_error("Wrong dimension for MasterOffset"); // LCOV_EXCL_LINE
             }
             self.build(nb_pt, x.data(), MasterOffset.data(), nb_sons, comm);
         },
@@ -44,8 +45,18 @@ void declare_Cluster(py::module &m, const std::string &className) {
         "MasterOffset"_a,
         "nb_sons"_a     = 2,
         py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
+    py_class.def("get_masteroffset", [](ClusterType &self) {
+        std::vector<std::pair<int, int>> masteroffset = self.get_masteroffset();
+        std::vector<int> masteroffset_raw(masteroffset.size() * 2);
+        std::array<std::size_t, 2> shape{2, masteroffset.size()};
+        for (int i = 0; i < masteroffset.size(); i++) {
+            masteroffset_raw[2 * i]     = masteroffset[i].first;
+            masteroffset_raw[2 * i + 1] = masteroffset[i].second;
+        }
+        return py::array_t<int, py::array::f_style>(shape, masteroffset_raw.data());
+    });
     py_class.def(
-        "display", [](ClusterType &self, py::array_t<double, py::array::f_style | py::array::forcecast> x, int depth, MPI_Comm_wrapper comm) {
+        "display", [](ClusterType &self, py::array_t<double, py::array::f_style | py::array::forcecast> x, int depth, bool show, MPI_Comm_wrapper comm) {
             int rankWorld;
             MPI_Comm_rank(comm, &rankWorld);
 
@@ -108,7 +119,10 @@ void declare_Cluster(py::module &m, const std::string &className) {
                     ax.attr("scatter")(std::vector<double>(output.begin(), output.begin() + size), std::vector<double>(output.begin() + size, output.begin() + 2 * size), std::vector<double>(output.begin() + 2 * size, output.begin() + 3 * size), "c"_a = colormap(norm(std::vector<double>(output.begin() + 3 * size, output.end()))), "marker"_a = 'o');
                 }
 
-                plt.attr("show")();
+                plt.attr("draw")();
+                if (show) {
+                    plt.attr("show")(); // LCOV_EXCL_LINE
+                }
                 return 0;
             }
 
@@ -116,6 +130,7 @@ void declare_Cluster(py::module &m, const std::string &className) {
         },
         "x"_a,
         "depth"_a,
+        py::arg("show") = true,
         py::arg("comm") = MPI_Comm_wrapper(MPI_COMM_WORLD));
     py_class.def(
         "read_cluster", [](ClusterType &self, std::string file_permutation, std::string file_tree, MPI_Comm_wrapper comm) {

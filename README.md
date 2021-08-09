@@ -1,4 +1,4 @@
-# Python interface of Htool [![CI](https://github.com/htool-ddm/htool_python/actions/workflows/CI.yml/badge.svg)](https://github.com/htool-ddm/htool_python/actions/workflows/CI.yml)
+# Python interface of Htool [![CI](https://github.com/htool-ddm/htool_python/actions/workflows/CI.yml/badge.svg)](https://github.com/htool-ddm/htool_python/actions/workflows/CI.yml) [![codecov](https://codecov.io/gh/htool-ddm/htool_python/branch/main/graph/badge.svg?token=P3FQNL8E64)](https://codecov.io/gh/htool-ddm/htool_python)
 
 ## What is Htool?
 

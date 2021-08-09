@@ -16,8 +16,8 @@ def test_cluster():
         data=input.read()
         (m, n) = struct.unpack("@II", data[:8])
         # print(m,n)
-        A=np.frombuffer(data[8:],dtype=np.dtype('complex128'))
-        A=np.transpose(A.reshape((m,n)))
+        # A=np.frombuffer(data[8:],dtype=np.dtype('complex128'))
+        # A=np.transpose(A.reshape((m,n)))
 
     # mesh
     p=np.zeros((3,n))
@@ -39,7 +39,15 @@ def test_cluster():
             if line=="$Nodes\n":
                 check=True
 
-    # Cluster
+    # Cluster read
     cluster = Htool.PCARegularClustering(3)
     cluster.read_cluster(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/cluster_"+str(size)+"_permutation.csv"),os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/cluster_"+str(size)+"_tree.csv"))
+    cluster.display(p,1,False)
+
+    # Cluster build
+    MasterOffset = cluster.get_masteroffset()
+    print(MasterOffset)
+    cluster_build = Htool.PCARegularClustering(3)
+    cluster_build.build(n,p,MasterOffset,2)
+    cluster_build.display(p,1,False)
 
