@@ -39,7 +39,7 @@ struct type_caster<MPI_Comm_wrapper> {
             // Convert to regular MPI communicator
             value.value = *PyMPIComm_Get(py_src);
         } else {
-            return false;
+            return false; // LCOV_EXCL_LINE
         }
 
         return !PyErr_Occurred();

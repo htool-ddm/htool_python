@@ -34,6 +34,7 @@ jobs:
             USE_SANITIZER: "" 
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
+            CODE_COVERAGE: "OFF"
 
           - name: "Ubuntu OpenMPI clang++"
             CC_COMPILER: clang 
@@ -43,14 +44,16 @@ jobs:
             USE_SANITIZER: "" 
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
+            CODE_COVERAGE: "OFF"
 
           - name: "Ubuntu MPICH g++"
             CC_COMPILER: gcc 
             CXX_COMPILER: g++ 
             container: "ubuntu_mpich"
             MPIEXEC_PREFLAGS: "" 
-            CMAKE_BUILD_TYPE: Release
+            CMAKE_BUILD_TYPE: Debug
             DOCKER_OPTIONS: " "
+            CODE_COVERAGE: "ON"
 
           - name: "Ubuntu MPICH clang++"
             CC_COMPILER: clang 
@@ -59,6 +62,7 @@ jobs:
             MPIEXEC_PREFLAGS: "" 
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
+            CODE_COVERAGE: "OFF"
           
           # Hangs on github
           # - name: "Debian OpenMPI g++"
@@ -86,6 +90,7 @@ jobs:
             MPIEXEC_PREFLAGS: "" 
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
+            CODE_COVERAGE: "OFF"
 
           - name: "Debian MPICH clang++"
             CC_COMPILER: clang 
@@ -94,6 +99,7 @@ jobs:
             MPIEXEC_PREFLAGS: "" 
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
+            CODE_COVERAGE: "OFF"
 
         
     container: 
@@ -115,12 +121,44 @@ jobs:
         with:
           submodules: 'true'
 
-      - name: Build  package
+      - name: Build package in release
+        if: matrix.CODE_COVERAGE == 'OFF'
         run: |
           pip3 install .
 
+      - name: Build package in debug for coverage
+        if: matrix.CODE_COVERAGE == 'ON'
+        run: |
+          mkdir build && cd build
+          pip3 install numpy scipy matplotlib
+          CC=${{ matrix.CC_COMPILER }} CXX=${{ matrix.CXX_COMPILER }} cmake -DUSE_SANITIZER=${{ matrix.USE_SANITIZER }} -DCMAKE_BUILD_TYPE=${{ matrix.CMAKE_BUILD_TYPE }} -DCODE_COVERAGE=${{ matrix.CODE_COVERAGE }} ../
+          make
+
+
       - name: Run tests
         run: |
+          export PYTHONPATH="$PWD/build"
           mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} pytest tests
           mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} pytest tests
           mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} pytest tests
+
+      - name: Check format
+        if: matrix.CODE_COVERAGE == 'ON'
+        run: |
+          cd build
+          make format
+          make cmake-format
+          git diff --exit-code
+
+      - name: Generate coverage reports
+        if: matrix.CODE_COVERAGE == 'ON'
+        run: |
+          lcov --capture --base-directory ./ --directory build/ --output-file coverage.info
+          lcov --remove  coverage.info '/usr/*' '*/hpddm/*' '*/pybind11/*' '*/lib/htool/*' --output-file  coverage.info
+
+      - name: Upload coverage to Codecov
+        if: matrix.CODE_COVERAGE == 'ON'
+        uses: codecov/codecov-action@v2
+        with:
+          file: coverage.info
+        

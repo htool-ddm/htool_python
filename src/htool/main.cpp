@@ -7,11 +7,11 @@
 PYBIND11_MODULE(Htool, m) {
     // import the mpi4py API
     if (import_mpi4py() < 0) {
-        throw std::runtime_error("Could not load mpi4py API.");
+        throw std::runtime_error("Could not load mpi4py API."); // LCOV_EXCL_LINE
     }
 
-    declare_IMatrix<double>(m, "IMatrix");
-    declare_IMatrix<std::complex<double>>(m, "ComplexIMatrix");
+    declare_VirtualGenerator<double>(m, "IMatrix");
+    declare_VirtualGenerator<std::complex<double>>(m, "ComplexIMatrix");
 
     py::class_<VirtualCluster, std::shared_ptr<VirtualCluster>>(m, "VirtualCluster");
     declare_Cluster<Cluster<PCARegularClustering>>(m, "PCARegularClustering");

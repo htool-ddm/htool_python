@@ -38,8 +38,7 @@ include(cmake/formatting.cmake)
 file(GLOB_RECURSE ALL_CODE_FILES ${PROJECT_SOURCE_DIR}/src/*.[h]pp)
 
 clang_format(format ${ALL_CODE_FILES})
-file(GLOB_RECURSE CMAKE_FILES ${PROJECT_SOURCE_DIR}/CMakeLists.txt)
-cmake_format(cmake_format ${CMAKE_FILES})
+cmake_format(cmake_format ${PROJECT_SOURCE_DIR}/CMakeLists.txt)
 
 # Files to do find_package for some module
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake_modules")
@@ -80,5 +79,10 @@ target_include_directories(
 target_link_libraries(Htool PRIVATE ${MPI_LIBRARIES} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} ${ARPACK_LIBRARIES} ${OpenMP_CXX_LIBRARIES})
 
 target_compile_definitions(Htool PRIVATE "-DPYTHON_INTERFACE" "-DWITH_HPDDM")
+
+if(CODE_COVERAGE AND (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
+    target_compile_options(Htool PRIVATE -fprofile-arcs -ftest-coverage)
+    target_link_libraries(Htool PRIVATE gcov)
+endif()
 
 # target_compile_features(Htool INTERFACE cxx_std_11)
