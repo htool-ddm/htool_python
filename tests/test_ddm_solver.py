@@ -126,6 +126,21 @@ def test_ddm_solver(mu,Symmetry):
     block_jacobi = Htool.ComplexDDM(hmat)
     DDM_solver   = Htool.ComplexDDM(generator,hmat,ovr_subdomain_to_global,cluster_to_ovr_subdomain,neighbors,intersections)
 
+    # Test local_to_global_numbering
+    renum = np.full(len(ovr_subdomain_to_global), -1)
+    renum_to_global = np.zeros(len(ovr_subdomain_to_global))
+    for i in range(0,len(cluster_to_ovr_subdomain)):
+        renum[cluster_to_ovr_subdomain[i]] = i
+        renum_to_global[i]                 = ovr_subdomain_to_global[cluster_to_ovr_subdomain[i]]
+    count = len(cluster_to_ovr_subdomain)
+    for i in range(0, len(ovr_subdomain_to_global)):
+        if (renum[i] == -1):
+            renum[i]                 = count;
+            renum_to_global[count] = ovr_subdomain_to_global[i]
+            count+=1
+
+    renum_to_global_b = DDM_solver.get_local_to_global_numbering()
+    assert np.linalg.norm(renum_to_global_b - renum_to_global)<1e-10
 
     # No precond wo overlap
     if rank==0:
@@ -197,6 +212,15 @@ def test_ddm_solver(mu,Symmetry):
         print("ASM one level with overlap:")
     comm.Barrier()
     DDM_solver.set_hpddm_args("-hpddm_schwarz_method asm")
+    if (Symmetry=='S' and size>1):
+        # Matrix
+        with open(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/"+folder+"/Ki_"+ str(size) + "_" + str(rank) +".bin"), "rb" ) as input:
+            data=input.read()
+            (m, n) = struct.unpack("@II", data[:8])
+            # print(m,n)
+            Ki=np.frombuffer(data[8:],dtype=np.dtype('complex128'))
+            Ki=np.transpose(Ki.reshape((m,n)))
+        DDM_solver.build_coarse_space(Ki)
     DDM_solver.facto_one_level()
     DDM_solver.solve(x,f)
     DDM_solver.print_infos()
@@ -224,6 +248,38 @@ def test_ddm_solver(mu,Symmetry):
         print(error)
     assert error < tol
     x.fill(0)
+
+    # DDM two level ASM with overlap
+    if (Symmetry=='S' and size>1):
+        if rank==0:
+            print("ASM two level with overlap:")
+        comm.Barrier()
+        DDM_solver.set_hpddm_args("-hpddm_schwarz_method asm -hpddm_schwarz_coarse_correction additive")
+        DDM_solver.solve(x,f)
+        DDM_solver.print_infos()
+        if mu==1:
+            error = np.linalg.norm(hmat*x-f)/np.linalg.norm(f)
+        elif mu>1:
+            error = np.linalg.norm(hmat@x-f)/np.linalg.norm(f)
+        if rank==0:
+            print(error)
+        assert error < tol
+        x.fill(0)
+
+        if rank==0:
+            print("RAS two level with overlap:")
+        comm.Barrier()
+        DDM_solver.set_hpddm_args("-hpddm_schwarz_method asm -hpddm_schwarz_coarse_correction additive")
+        DDM_solver.solve(x,f)
+        DDM_solver.print_infos()
+        if mu==1:
+            error = np.linalg.norm(hmat*x-f)/np.linalg.norm(f)
+        elif mu>1:
+            error = np.linalg.norm(hmat@x-f)/np.linalg.norm(f)
+        if rank==0:
+            print(error)
+        assert error < tol
+        x.fill(0)
 
     # Check infos
     if (mpi4py.MPI.COMM_WORLD.Get_rank()==0):
