@@ -29,6 +29,19 @@ void declare_DDM(py::module &m, const std::string &className) {
                  const std::vector<int> &,
                  const std::vector<std::vector<int>> &>());
     py_class.def("facto_one_level", &Class::facto_one_level);
+    py_class.def("build_coarse_space", [](Class &self, py::array_t<T, py::array::f_style> Ki) {
+        if (Ki.ndim() != 2) {
+            throw std::invalid_argument("Wrong dimension for local matrix when building coarse space\n"); // LCOV_EXCL_LINE
+        }
+        if (Ki.shape()[0] != self.get_local_size() && Ki.shape()[1] != self.get_local_size()) {
+            throw std::invalid_argument("Wrong size for local matrix when building coarse space\n"); // LCOV_EXCL_LINE
+        }
+
+        Matrix<T> Ki_mat(Ki.shape()[0], Ki.shape()[1]);
+        std::copy_n(Ki.data(), Ki.shape()[0] * Ki.shape()[1], Ki_mat.data());
+        self.build_coarse_space(Ki_mat);
+    });
+    py_class.def("get_local_to_global_numbering", &Class::get_local_to_global_numbering);
     py_class.def(
         "solve", [](Class &self, py::array_t<T, py::array::f_style> x, const py::array_t<T, py::array::f_style | py::array::forcecast> b, std::string hpddm_args) {
             int rank;
