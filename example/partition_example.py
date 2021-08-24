@@ -3,7 +3,7 @@ import numpy as np
 import mpi4py
 
 # Custom generator
-class Generator(Htool.IMatrix):
+class Generator(Htool.VirtualGenerator):
 
     def __init__(self,points_target,points_source):
         super().__init__(points_target.shape[1],points_source.shape[1])

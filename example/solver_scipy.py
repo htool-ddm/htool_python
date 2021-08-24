@@ -5,7 +5,7 @@ from numpy.linalg import norm
 from scipy.sparse.linalg import gmres
 
 # Custom generator
-class Generator(Htool.IMatrix):
+class Generator(Htool.VirtualGenerator):
 
     def __init__(self,points):
         super().__init__(points.shape[1],points.shape[1])

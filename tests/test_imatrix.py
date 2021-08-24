@@ -2,7 +2,7 @@ import Htool
 import numpy as np
 import pytest
 
-class GeneratorSubMatrix(Htool.IMatrix):
+class GeneratorSubMatrix(Htool.VirtualGenerator):
     def build_submatrix(self,J,K,mat):
         for j in range(0,len(J)):
             for k in range(0,len(K)):

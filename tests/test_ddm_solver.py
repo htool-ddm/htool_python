@@ -8,7 +8,7 @@ import mpi4py
 import pytest
 
 
-class GeneratorCoef(Htool.ComplexIMatrix):
+class GeneratorCoef(Htool.ComplexVirtualGenerator):
     def __init__(self,matrix):
         super().__init__(matrix.shape[0],matrix.shape[1])
         self.matrix=matrix

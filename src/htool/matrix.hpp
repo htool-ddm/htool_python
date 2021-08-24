@@ -21,7 +21,7 @@ class VirtualGeneratorCpp : public VirtualGenerator<T> {
     }
 
     // lcov does not see it because of trampoline I assume
-    virtual void build_submatrix(const std::vector<int> &J, const std::vector<int> &K, py::array_t<T, py::array::f_style> &mat) const {}; // LCOV_EXCL_LINE
+    virtual void build_submatrix(const std::vector<int> &J, const std::vector<int> &K, py::array_t<T, py::array::f_style> &mat) const = 0; // LCOV_EXCL_LINE
 };
 
 template <typename T>
@@ -32,7 +32,7 @@ class PyVirtualGenerator : public VirtualGeneratorCpp<T> {
 
     /* Trampoline (need one for each virtual function) */
     virtual void build_submatrix(const std::vector<int> &J, const std::vector<int> &K, py::array_t<T, py::array::f_style> &mat) const override {
-        PYBIND11_OVERLOAD(
+        PYBIND11_OVERRIDE_PURE(
             void,                   /* Return type */
             VirtualGeneratorCpp<T>, /* Parent class */
             build_submatrix,        /* Name of function in C++ (must match Python name) */

@@ -6,6 +6,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "lrmat_generator.hpp"
 #include "matrix.hpp"
 #include "misc.hpp"
 #include "wrapper_mpi.hpp"
@@ -15,12 +16,12 @@ namespace py = pybind11;
 using namespace pybind11::literals;
 using namespace htool;
 
-template <typename T, template <typename> class LowRankMatrix, class AdmissibleCondition>
+template <typename T>
 void declare_HMatrix(py::module &m, const std::string &baseclassName, const std::string &className) {
 
     py::class_<VirtualHMatrix<T>>(m, baseclassName.c_str());
 
-    using Class = HMatrix<T, LowRankMatrix, AdmissibleCondition>;
+    using Class = HMatrix<T>;
     py::class_<Class, VirtualHMatrix<T>> py_class(m, className.c_str());
 
     // Constructor with precomputed clusters
@@ -28,17 +29,20 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
 
     // Symmetric build
     py_class.def("build", [](Class &self, VirtualGeneratorCpp<T> &mat, const py::array_t<double, py::array::f_style> &xt, const py::array_t<double, py::array::f_style> &xs) {
-        self.build_auto(mat, xt.data(), xs.data());
+        self.build(mat, xt.data(), xs.data());
     });
 
     py_class.def("build", [](Class &self, VirtualGeneratorCpp<T> &mat, const py::array_t<double, py::array::f_style> &x) {
-        self.build_auto_sym(mat, x.data());
+        self.build(mat, x.data());
     });
 
     // Setters
     py_class.def("set_maxblocksize", &Class::set_maxblocksize);
     py_class.def("set_minsourcedepth", &Class::set_minsourcedepth);
     py_class.def("set_mintargetdepth", &Class::set_mintargetdepth);
+    py_class.def("set_compression", [](Class &self, std::shared_ptr<VirtualLowRankGeneratorCpp<T>> mat) {
+        self.set_compression(mat);
+    });
 
     // Getters
     py_class.def_property_readonly("shape", [](const Class &self) {
