@@ -2,8 +2,9 @@ import Htool
 import numpy as np
 import mpi4py
 import pytest
-
-class GeneratorSubMatrix(Htool.IMatrix):
+import math
+import matplotlib.pyplot as plt
+class GeneratorSubMatrix(Htool.VirtualGenerator):
 
     def __init__(self,points_target,points_source):
         super().__init__(points_target.shape[1],points_source.shape[1])
@@ -36,13 +37,35 @@ class GeneratorSubMatrix(Htool.IMatrix):
 
 
 
-@pytest.mark.parametrize("NbRows,NbCols,Symmetric,UPLO", [
-    (500, 500, 'S','L'),
-    (500, 500, 'S','U'),
-    (500, 500, 'N', 'N'),
-    (500, 250, 'N', 'N'),
+class CustomSVD(Htool.CustomLowRankGenerator):
+
+    def build_low_rank_approximation(self,epsilon, rank,A, J, K):
+        submat = np.zeros((len(J),len(K)))
+        A.build_submatrix(J,K,submat)
+        u, s, vh = np.linalg.svd(submat,full_matrices=False)
+
+        norm= np.linalg.norm(submat)
+        svd_norm=0
+        count=len(s)-1
+        while  count>0 and math.sqrt(svd_norm)/norm<epsilon:
+            svd_norm+=s[count]**2
+            count-=1
+        count=min(count+1,min(len(J),len(K)))
+        self.set_U(u[:,0:count]*s[0:count])
+        self.set_V(vh[0:count,:])
+        self.set_rank(count)
+
+@pytest.mark.parametrize("NbRows,NbCols,Symmetric,UPLO,Compression", [
+    (500, 500, 'S','L', None),
+    (500, 500, 'S','U', None),
+    (500, 500, 'N', 'N', None),
+    (500, 250, 'N', 'N', None),
+    (500, 500, 'S','L', "Custom"),
+    (500, 500, 'S','U', "Custom"),
+    (500, 500, 'N', 'N', "Custom"),
+    (500, 250, 'N', 'N', "Custom"),
 ])
-def test_HMatrix(NbRows, NbCols, Symmetric,UPLO):
+def test_HMatrix(NbRows, NbCols, Symmetric,UPLO,Compression):
 
 
     # Random geometry
@@ -80,6 +103,10 @@ def test_HMatrix(NbRows, NbCols, Symmetric,UPLO):
 
     HMatrix = Htool.HMatrix(cluster_target,cluster_source,epsilon,eta,Symmetric,UPLO)
 
+    if Compression is not None:
+        compression = CustomSVD()
+        HMatrix.set_compression(compression)
+
     if Symmetric!='N':
         HMatrix.build(Generator, points_target)
     else:
@@ -116,6 +143,7 @@ def test_HMatrix(NbRows, NbCols, Symmetric,UPLO):
     HMatrix.display_cluster(points_target,2,"target",False)
     if Symmetric=='N':
         HMatrix.display_cluster(points_source,2,"source",False)
+    plt.close()
 
     # Print information
     HMatrix.print_infos()
