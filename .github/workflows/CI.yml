@@ -2,21 +2,21 @@
 
 name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-  
+
   # # Run tests every month
   # schedule:
   #   - cron: '0 0 1 * *'
-      
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -27,87 +27,86 @@ jobs:
       matrix:
         include:
           - name: "Ubuntu OpenMPI g++"
-            CC_COMPILER: gcc 
-            CXX_COMPILER: g++ 
+            CC_COMPILER: gcc
+            CXX_COMPILER: g++
             container: "ubuntu_openmpi"
-            MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe" 
-            USE_SANITIZER: "" 
+            MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
+            USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
             CODE_COVERAGE: "OFF"
 
           - name: "Ubuntu OpenMPI clang++"
-            CC_COMPILER: clang 
-            CXX_COMPILER: clang++ 
+            CC_COMPILER: clang
+            CXX_COMPILER: clang++
             container: "ubuntu_openmpi"
-            MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe" 
-            USE_SANITIZER: "" 
+            MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
+            USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
             CODE_COVERAGE: "OFF"
 
           - name: "Ubuntu MPICH g++"
-            CC_COMPILER: gcc 
-            CXX_COMPILER: g++ 
+            CC_COMPILER: gcc
+            CXX_COMPILER: g++
             container: "ubuntu_mpich"
-            MPIEXEC_PREFLAGS: "" 
+            MPIEXEC_PREFLAGS: ""
             CMAKE_BUILD_TYPE: Debug
             DOCKER_OPTIONS: " "
             CODE_COVERAGE: "ON"
 
           - name: "Ubuntu MPICH clang++"
-            CC_COMPILER: clang 
-            CXX_COMPILER: clang++ 
+            CC_COMPILER: clang
+            CXX_COMPILER: clang++
             container: "ubuntu_mpich"
-            MPIEXEC_PREFLAGS: "" 
+            MPIEXEC_PREFLAGS: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
             CODE_COVERAGE: "OFF"
-          
+
           # Hangs on github
           # - name: "Debian OpenMPI g++"
-          #   CC_COMPILER: gcc 
-          #   CXX_COMPILER: g++ 
+          #   CC_COMPILER: gcc
+          #   CXX_COMPILER: g++
           #   container: "debian_openmpi"
-          #   MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe --mca btl_vader_single_copy_mechanism none" 
-          #   USE_SANITIZER: "" 
+          #   MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe --mca btl_vader_single_copy_mechanism none"
+          #   USE_SANITIZER: ""
           #   CMAKE_BUILD_TYPE: Debug
           #   DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
 
           # - name: "Debian OpenMPI clang++"
-          #   CC_COMPILER: clang 
-          #   CXX_COMPILER: clang++ 
+          #   CC_COMPILER: clang
+          #   CXX_COMPILER: clang++
           #   container: "debian_openmpi"
-          #   MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe --mca btl_vader_single_copy_mechanism none" 
-          #   USE_SANITIZER: "" 
+          #   MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe --mca btl_vader_single_copy_mechanism none"
+          #   USE_SANITIZER: ""
           #   CMAKE_BUILD_TYPE: Debug
           #   DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
 
           - name: "Debian MPICH g++"
-            CC_COMPILER: gcc 
-            CXX_COMPILER: g++ 
+            CC_COMPILER: gcc
+            CXX_COMPILER: g++
             container: "debian_mpich"
-            MPIEXEC_PREFLAGS: "" 
+            MPIEXEC_PREFLAGS: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
             CODE_COVERAGE: "OFF"
 
           - name: "Debian MPICH clang++"
-            CC_COMPILER: clang 
-            CXX_COMPILER: clang++ 
+            CC_COMPILER: clang
+            CXX_COMPILER: clang++
             container: "debian_mpich"
-            MPIEXEC_PREFLAGS: "" 
+            MPIEXEC_PREFLAGS: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
             CODE_COVERAGE: "OFF"
 
-        
-    container: 
+    container:
       image: pierremarchand/htool_testing_environments:${{ matrix.container }}
-      options: ${{ matrix.DOCKER_OPTIONS }}
-    
+      options: --user root ${{ matrix.DOCKER_OPTIONS }}
+
     name: CI (${{ matrix.name }})
-    
+
     env:
       CC: ${{ matrix.CC_COMPILER }}
       CXX: ${{ matrix.CXX_COMPILER }}
@@ -115,16 +114,15 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     if: "!contains(github.event.head_commit.message, '[ci skip]')"
     steps:
-
       - name: Checkout htool-python
         uses: actions/checkout@v2
         with:
-          submodules: 'true'
+          submodules: "true"
 
       - name: Build package in release
         if: matrix.CODE_COVERAGE == 'OFF'
         run: |
-          pip3 install .
+          pip3 install . --user
 
       - name: Build package in debug for coverage
         if: matrix.CODE_COVERAGE == 'ON'
@@ -133,7 +131,6 @@ jobs:
           pip3 install numpy scipy matplotlib
           CC=${{ matrix.CC_COMPILER }} CXX=${{ matrix.CXX_COMPILER }} cmake -DUSE_SANITIZER=${{ matrix.USE_SANITIZER }} -DCMAKE_BUILD_TYPE=${{ matrix.CMAKE_BUILD_TYPE }} -DCODE_COVERAGE=${{ matrix.CODE_COVERAGE }} ../
           make
-
 
       - name: Run tests
         run: |
@@ -161,4 +158,3 @@ jobs:
         uses: codecov/codecov-action@v2
         with:
           file: coverage.info
-        

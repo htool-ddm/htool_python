@@ -223,9 +223,9 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
 
                 VirtualCluster const *root;
                 if (type == "target") {
-                    root = &(self.get_cluster_tree_t());
+                    root = (self.get_target_cluster());
                 } else if (type == "source") {
-                    root = &(self.get_cluster_tree_s());
+                    root = (self.get_source_cluster());
                 } else {
                     std::cout << "Choose between target and source" << std::endl; // LCOV_EXCL_LINE
                     return 0;                                                     // LCOV_EXCL_LINE
