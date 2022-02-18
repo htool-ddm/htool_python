@@ -58,17 +58,38 @@ class CustomSVD(Htool.CustomLowRankGenerator):
         self.set_rank(count)
 
 
-@pytest.mark.parametrize("NbRows,NbCols,Symmetric,UPLO,Compression", [
-    (500, 500, 'S', 'L', None),
-    (500, 500, 'S', 'U', None),
-    (500, 500, 'N', 'N', None),
-    (500, 250, 'N', 'N', None),
-    (500, 500, 'S', 'L', "Custom"),
-    (500, 500, 'S', 'U', "Custom"),
-    (500, 500, 'N', 'N', "Custom"),
-    (500, 250, 'N', 'N', "Custom"),
+class DenseBlockGenerator(Htool.CustomDenseBlocksGenerator):
+    def __init__(self, points_target, points_source):
+        super().__init__()
+        self.points_target = points_target
+        self.points_source = points_source
+        self.points_target = points_target
+        self.points_source = points_source
+
+    def build_dense_blocks(self, rows, cols, blocks):
+        nb_blocks = len(rows)  # =len(cols)=len(blocks)
+        for i in range(nb_blocks):
+            J, K = blocks[i].shape
+            for j in range(J):
+                for k in range(0, K):
+                    blocks[i][j, k] = 1.0 / (1.e-5 + np.linalg.norm(
+                        self.points_target[:, rows[i][j]] - self.points_source[:, cols[i][k]]))
+
+
+@pytest.mark.parametrize("NbRows,NbCols,Symmetric,UPLO,Compression,Delay", [
+    (500, 500, 'S', 'L', None, False),
+    (500, 500, 'S', 'U', None, False),
+    (500, 500, 'N', 'N', None, False),
+    (500, 250, 'N', 'N', None, False),
+    (500, 500, 'S', 'L', None, True),
+    (500, 500, 'S', 'U', None, True),
+    (500, 500, 'N', 'N', None, True),
+    (500, 500, 'S', 'L', "Custom", True),
+    (500, 500, 'S', 'U', "Custom", True),
+    (500, 500, 'N', 'N', "Custom", True),
+    (500, 250, 'N', 'N', "Custom", True),
 ])
-def test_HMatrix(NbRows, NbCols, Symmetric, UPLO, Compression):
+def test_HMatrix(NbRows, NbCols, Symmetric, UPLO, Compression, Delay):
 
     # Random geometry
     np.random.seed(0)
@@ -110,10 +131,17 @@ def test_HMatrix(NbRows, NbCols, Symmetric, UPLO, Compression):
         compression = CustomSVD()
         HMatrix.set_compression(compression)
 
+    HMatrix.set_delay_dense_computation(Delay)
+
     if Symmetric != 'N':
         HMatrix.build(Generator, points_target)
     else:
         HMatrix.build(Generator, points_target, points_source)
+
+    if Delay:
+        dense_blocks_generator = DenseBlockGenerator(
+            points_target, points_source)
+        HMatrix.build_dense_blocks(dense_blocks_generator)
 
     # Getters
     assert HMatrix.shape[0] == NbRows

@@ -36,10 +36,15 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
         self.build(mat, x.data());
     });
 
+    py_class.def("build_dense_blocks", [](Class &self, VirtualDenseBlocksGeneratorCpp<T> &dense_block_generator) {
+        self.build_dense_blocks(dense_block_generator);
+    });
+
     // Setters
     py_class.def("set_maxblocksize", &Class::set_maxblocksize);
     py_class.def("set_minsourcedepth", &Class::set_minsourcedepth);
     py_class.def("set_mintargetdepth", &Class::set_mintargetdepth);
+    py_class.def("set_delay_dense_computation", &Class::set_delay_dense_computation);
     py_class.def("set_compression", [](Class &self, std::shared_ptr<VirtualLowRankGeneratorCpp<T>> mat) {
         self.set_compression(mat);
     });

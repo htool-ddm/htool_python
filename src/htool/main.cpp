@@ -1,5 +1,6 @@
 #include "cluster.hpp"
 #include "ddm_solver.hpp"
+#include "dense_blocks_generator.hpp"
 #include "hmatrix.hpp"
 #include "lrmat_generator.hpp"
 #include "matrix.hpp"
@@ -21,6 +22,7 @@ PYBIND11_MODULE(Htool, m) {
     declare_Cluster<Cluster<BoundingBox1GeometricClustering>>(m, "BoundingBox1GeometricClustering");
 
     declare_custom_VirtualLowRankGenerator<double>(m, "CustomLowRankGenerator");
+    declare_custom_VirtualDenseBlocksGenerator<double>(m, "CustomDenseBlocksGenerator");
 
     declare_HMatrix<double>(m, "HMatrixVirtual", "HMatrix");
     declare_HMatrix<std::complex<double>>(m, "ComplexHMatrixVirtual", "ComplexHMatrix");
