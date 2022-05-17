@@ -9,6 +9,7 @@
 #include "lrmat_generator.hpp"
 #include "matrix.hpp"
 #include "misc.hpp"
+#include "off_diagonal_approximation.hpp"
 #include "wrapper_mpi.hpp"
 #include <htool/htool.hpp>
 
@@ -48,6 +49,9 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
     py_class.def("set_compression", [](Class &self, std::shared_ptr<VirtualLowRankGeneratorCpp<T>> mat) {
         self.set_compression(mat);
     });
+    py_class.def("set_off_diagonal_approximation", [](Class &self, std::shared_ptr<VirtualOffDiagonalApproximation<T>> mat) {
+        self.set_off_diagonal_approximation(mat);
+    });
 
     // Getters
     py_class.def_property_readonly("shape", [](const Class &self) {
@@ -57,6 +61,14 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
     py_class.def("get_perm_s", overload_cast_<>()(&Class::get_perms, py::const_));
     py_class.def("get_MasterOffset_t", overload_cast_<>()(&Class::get_MasterOffset_t, py::const_));
     py_class.def("get_MasterOffset_s", overload_cast_<>()(&Class::get_MasterOffset_s, py::const_));
+    py_class.def("get_off_diagonal_geometries", [](const Class &self, const py::array_t<double, py::array::f_style> &xt, const py::array_t<double, py::array::f_style> &xs) {
+        int new_nc, new_nr, spatial_dimension;
+        self.get_off_diagonal_size(new_nr, new_nc);
+        spatial_dimension = self.get_target_cluster()->get_space_dim();
+        py::array_t<double, py::array::f_style> new_xs(std::array<long int, 2>{spatial_dimension, new_nc}), new_xt(std::array<long int, 2>{spatial_dimension, new_nr});
+        self.get_off_diagonal_geometries(xt.data(), xs.data(), new_xt.mutable_data(), new_xs.mutable_data());
+        return std::tuple<py::array_t<double, py::array::f_style>, py::array_t<double, py::array::f_style>>(new_xt, new_xs);
+    });
 
     // Linear algebra
     py_class.def("__mul__", [](const Class &self, std::vector<T> b) {
@@ -102,50 +114,9 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
     // Plot pattern
     py_class.def(
         "display", [](const Class &self, bool show = true) {
-            const std::vector<LowRankMatrix<T> *> &lrmats = self.get_MyFarFieldMats();
-            const std::vector<SubMatrix<T> *> &dmats      = self.get_MyNearFieldMats();
-
-            int nb        = dmats.size() + lrmats.size();
-            int sizeworld = self.get_sizeworld();
-            int rankworld = self.get_rankworld();
-
-            int nbworld[sizeworld];
-            MPI_Allgather(&nb, 1, MPI_INT, nbworld, 1, MPI_INT, self.get_comm());
-            int nbg = 0;
-            for (int i = 0; i < sizeworld; i++) {
-                nbg += nbworld[i];
-            }
-
-            std::vector<int> buf(5 * nbg, 0);
-
-            for (int i = 0; i < dmats.size(); i++) {
-                const SubMatrix<T> &l = *(dmats[i]);
-                buf[5 * i]            = l.get_offset_i();
-                buf[5 * i + 1]        = l.nb_rows();
-                buf[5 * i + 2]        = l.get_offset_j();
-                buf[5 * i + 3]        = l.nb_cols();
-                buf[5 * i + 4]        = -1;
-            }
-
-            for (int i = 0; i < lrmats.size(); i++) {
-                const LowRankMatrix<T> &l       = *(lrmats[i]);
-                buf[5 * (dmats.size() + i)]     = l.get_offset_i();
-                buf[5 * (dmats.size() + i) + 1] = l.nb_rows();
-                buf[5 * (dmats.size() + i) + 2] = l.get_offset_j();
-                buf[5 * (dmats.size() + i) + 3] = l.nb_cols();
-                buf[5 * (dmats.size() + i) + 4] = l.rank_of();
-            }
-
-            int displs[sizeworld];
-            int recvcounts[sizeworld];
-            displs[0] = 0;
-
-            for (int i = 0; i < sizeworld; i++) {
-                recvcounts[i] = 5 * nbworld[i];
-                if (i > 0)
-                    displs[i] = displs[i - 1] + recvcounts[i - 1];
-            }
-            MPI_Gatherv(rankworld == 0 ? MPI_IN_PLACE : buf.data(), recvcounts[rankworld], MPI_INT, buf.data(), recvcounts, displs, MPI_INT, 0, self.get_comm());
+            int rankworld        = self.get_rankworld();
+            std::vector<int> buf = self.get_output();
+            int nbg              = buf.size() / 5;
 
             if (rankworld == 0) {
                 // Import
@@ -158,6 +129,7 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
                 int nr = self.nb_rows();
                 int nc = self.nb_cols();
                 py::array_t<int> matrix({nr, nc});
+                matrix.attr("fill")(0);
                 py::array_t<bool> mask_matrix({nr, nc});
                 mask_matrix.attr("fill")(false);
 
@@ -246,7 +218,7 @@ void declare_HMatrix(py::module &m, const std::string &baseclassName, const std:
                 // Permuted geometric points
                 for (int i = 0; i < size; ++i) {
                     for (int p = 0; p < space_dim; p++) {
-                        output[i + size * p] = points_target.at(p, root->get_perm(i));
+                        output[i + size * p] = points_target.at(p, root->get_global_perm(i));
                     }
                 }
 

@@ -74,7 +74,7 @@ void declare_Cluster(py::module &m, const std::string &className) {
                 // Permuted geometric points
                 for (int i = 0; i < size; ++i) {
                     for (int p = 0; p < space_dim; p++) {
-                        output[i + size * p] = x.at(p, root->get_perm(i));
+                        output[i + size * p] = x.at(p, root->get_global_perm(i));
                     }
                 }
 
