@@ -104,7 +104,12 @@ void declare_VirtualOffDiagonalApproximation(py::module &m, const std::string &B
     py_class.def("build", [](Class &self, VirtualGeneratorCpp<T> &mat, const py::array_t<double, py::array::f_style> &x, const py::array_t<double, py::array::f_style> &y) {
         self.build(mat, x.data(), y.data());
     });
-
+    py_class.def("set_compression", [](Class &self, std::shared_ptr<VirtualLowRankGeneratorCpp<T>> mat) {
+        self.set_compression(mat);
+    });
+    py_class.def("print_infos", [](Class &self) {
+        self.get_HMatrix()->print_infos();
+    });
     // Plot pattern
     py_class.def(
         "display", [](const Class &self, bool show = true) {

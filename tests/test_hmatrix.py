@@ -112,6 +112,14 @@ class DenseBlockGenerator(Htool.CustomDenseBlocksGenerator):
     (500, 500, 'S', 'U', None, False, "HMatrix"),
     (500, 500, 'N', 'N', None, False, "HMatrix"),
     (500, 250, 'N', 'N', None, False, "HMatrix"),
+    (500, 500, 'S', 'L', "Custom", False, "Dense"),
+    (500, 500, 'S', 'U', "Custom", False, "Dense"),
+    (500, 500, 'N', 'N', "Custom", False, "Dense"),
+    (500, 250, 'N', 'N', "Custom", False, "Dense"),
+    (500, 500, 'S', 'L', "Custom", False, "HMatrix"),
+    (500, 500, 'S', 'U', "Custom", False, "HMatrix"),
+    (500, 500, 'N', 'N', "Custom", False, "HMatrix"),
+    (500, 250, 'N', 'N', "Custom", False, "HMatrix"),
 ])
 def test_HMatrix(NbRows, NbCols, Symmetric, UPLO, Compression, Delay, OffDiagonalApproximation):
 
@@ -178,8 +186,14 @@ def test_HMatrix(NbRows, NbCols, Symmetric, UPLO, Compression, Delay, OffDiagona
             # Off diagonal HMatrix
             off_diagonal_approximation = Htool.HMatrixOffDiagonalApproximation(
                 HMatrix, off_diagonal_cluster_target, off_diagonal_cluster_source)
+            if Compression is not None:
+                compression = CustomSVD()
+                off_diagonal_approximation.set_compression(compression)
+
             off_diagonal_approximation.build(off_diagonal_generator,
                                              off_diagonal_points_target, off_diagonal_points_source)
+
+            off_diagonal_approximation.print_infos()
 
         HMatrix.set_off_diagonal_approximation(
             off_diagonal_approximation)
