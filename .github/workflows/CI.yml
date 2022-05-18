@@ -143,11 +143,10 @@ jobs:
 
       - name: Check format
         if: matrix.CODE_COVERAGE == 'ON'
+        # https://github.com/actions/checkout/pull/762
         run: |
           cd build
-          pwd
-          ls ../ -a 
-          git log
+          git config --global --add safe.directory `pwd` 
           make format
           make cmake-format
           git diff --exit-code
