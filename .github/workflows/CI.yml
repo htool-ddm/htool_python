@@ -73,6 +73,7 @@ jobs:
             USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
+            CODE_COVERAGE: "OFF"
 
           - name: "Debian OpenMPI clang++"
             CC_COMPILER: clang
@@ -82,6 +83,7 @@ jobs:
             USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
+            CODE_COVERAGE: "OFF"
 
           - name: "Debian MPICH g++"
             CC_COMPILER: gcc
