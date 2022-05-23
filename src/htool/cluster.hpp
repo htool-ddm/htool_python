@@ -16,7 +16,6 @@ using namespace htool;
 
 template <typename ClusterType>
 void declare_Cluster(py::module &m, const std::string &className) {
-
     py::class_<ClusterType, std::shared_ptr<ClusterType>, VirtualCluster> py_class(m, className.c_str());
     py_class.def(py::init<int>());
     py_class.def(
@@ -55,6 +54,7 @@ void declare_Cluster(py::module &m, const std::string &className) {
         }
         return py::array_t<int, py::array::f_style>(shape, masteroffset_raw.data());
     });
+    py_class.def("get_global_perm", overload_cast_<int>()(&ClusterType::get_global_perm, py::const_));
     py_class.def(
         "display", [](ClusterType &self, py::array_t<double, py::array::f_style | py::array::forcecast> x, int depth, bool show, MPI_Comm_wrapper comm) {
             int rankWorld;

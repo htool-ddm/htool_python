@@ -194,6 +194,7 @@ def test_HMatrix(NbRows, NbCols, Symmetric, UPLO, Compression, Delay, OffDiagona
                                              off_diagonal_points_target, off_diagonal_points_source)
 
             off_diagonal_approximation.print_infos()
+            off_diagonal_approximation.display(False)
 
         HMatrix.set_off_diagonal_approximation(
             off_diagonal_approximation)
