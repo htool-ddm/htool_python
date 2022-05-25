@@ -42,7 +42,8 @@ class CustomOffDiagonalApproximation(Htool.ComplexCustomOffDiagonalApproximation
     (10, 'S', None),
     (1, 'N', None),
     (10, 'N', None),
-    (10, 'N', "Dense"),
+    (1, 'N', "Dense"),
+    (1, 'S', "Dense"),
 ])
 def test_ddm_solver(mu, Symmetry, OffDiagonalApproximation):
 

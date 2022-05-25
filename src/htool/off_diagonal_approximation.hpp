@@ -46,7 +46,7 @@ class VirtualOffDiagonalApproximationCpp : public VirtualOffDiagonalApproximatio
 
     virtual void mat_mat_prod_sub_rhs_to_local(const py::array_t<T, py::array::c_style> &in, py::array_t<T, py::array::c_style> &out, int mu, int offset, int size) const {
         std::vector<T> in_global(nc * mu, 0);
-        std::copy_n(in.data(), size * mu, in_global.data());
+        std::copy_n(in.data(), size * mu, in_global.data() + offset * mu);
         py::array_t<T, py::array::c_style> in_global_pyarray({nc, mu}, in_global.data());
 
         this->mat_mat_prod_global_to_local(in_global_pyarray, out);
