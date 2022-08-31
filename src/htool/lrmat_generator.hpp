@@ -15,8 +15,9 @@ using namespace htool;
 template <typename T>
 class VirtualLowRankGeneratorCpp : public VirtualLowRankGenerator<T> {
 
-    py::array_t<T, py::array::f_style> mat_U, mat_V;
     int rank;
+    mutable std::vector<py::array_t<T, py::array::f_style>> mats_U; // owned by Python
+    mutable std::vector<py::array_t<T, py::array::f_style>> mats_V; // owned by Python
 
   public:
     using VirtualLowRankGenerator<T>::VirtualLowRankGenerator;
@@ -24,18 +25,18 @@ class VirtualLowRankGeneratorCpp : public VirtualLowRankGenerator<T> {
     void copy_low_rank_approximation(double epsilon, int M, int N, const int *const rows, const int *const cols, int &rank0, T **U, T **V, const VirtualGenerator<T> &A, const VirtualCluster &t, const double *const xt, const VirtualCluster &s, const double *const xs) const override {
 
         build_low_rank_approximation(epsilon, rank0, A, std::vector<int>(rows, rows + M), std::vector<int>(cols, cols + N));
-        *U    = new T[M * rank];
-        *V    = new T[N * rank];
+        *U    = mats_U.back().mutable_data();
+        *V    = mats_V.back().mutable_data();
         rank0 = rank;
-        std::copy_n(mat_U.data(), mat_U.size(), *U);
-        std::copy_n(mat_V.data(), mat_V.size(), *V);
     }
+
+    bool is_htool_owning_data() const override { return false; }
 
     // lcov does not see it because of trampoline I assume
     virtual void build_low_rank_approximation(double epsilon, int rank, const VirtualGenerator<T> &A, const std::vector<int> &J, const std::vector<int> &K) const = 0; // LCOV_EXCL_LINE
 
-    void set_U(py::array_t<T, py::array::f_style> U0) { mat_U = U0; }
-    void set_V(py::array_t<T, py::array::f_style> V0) { mat_V = V0; }
+    void set_U(py::array_t<T, py::array::f_style> U0) { mats_U.push_back(U0); }
+    void set_V(py::array_t<T, py::array::f_style> V0) { mats_V.push_back(V0); }
     void set_rank(int rank0) { rank = rank0; }
 };
 

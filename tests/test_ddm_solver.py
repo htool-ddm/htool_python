@@ -21,14 +21,31 @@ class GeneratorCoef(Htool.ComplexVirtualGenerator):
             for k in range(0, len(K)):
                 mat[j, k] = self.get_coef(J[j], K[k])
 
+    def inplace_matmat(self, X, Y):
+        for i in range(0, self.nb_rows()):
+            for j in range(0, X.shape[1]):
+                for k in range(0, self.nb_cols()):
+                    Y[i, j] += self.get_coef(i, k)*X[k, j]
 
-@pytest.mark.parametrize("mu,Symmetry", [
-    (1, 'S'),
-    (10, 'S'),
-    (1, 'N'),
-    (10, 'N'),
+
+class CustomOffDiagonalApproximation(Htool.ComplexCustomOffDiagonalApproximation):
+    def __init__(self, HA, subA):
+        Htool.ComplexCustomOffDiagonalApproximation.__init__(self, HA)
+        self.off_diagonal_generator = GeneratorCoef(subA)
+
+    def mat_mat_prod_global_to_local(self, x, y):
+        self.off_diagonal_generator.inplace_matmat(x, y)
+
+
+@pytest.mark.parametrize("mu,Symmetry,OffDiagonalApproximation", [
+    (1, 'S', None),
+    (10, 'S', None),
+    (1, 'N', None),
+    (10, 'N', None),
+    (1, 'N', "Dense"),
+    (1, 'S', "Dense"),
 ])
-def test_ddm_solver(mu, Symmetry):
+def test_ddm_solver(mu, Symmetry, OffDiagonalApproximation):
 
     # MPI
     comm = MPI.COMM_WORLD
@@ -95,6 +112,32 @@ def test_ddm_solver(mu, Symmetry):
     # Hmatrix
     generator = GeneratorCoef(A)
     hmat = Htool.ComplexHMatrix(cluster, cluster, tol, eta, Symmetry, UPLO)
+
+    if OffDiagonalApproximation is not None:
+        if OffDiagonalApproximation == "Dense":
+            MasterOffset = cluster.get_masteroffset()
+            A_perm = np.zeros((n, n), dtype=np.dtype('complex128'))
+            for i in range(0, n):
+                for j in range(0, n):
+                    A_perm[i, j] = A[cluster.get_global_perm(
+                        i), cluster.get_global_perm(j)]
+
+            rows = np.arange(MasterOffset[0, rank],
+                             MasterOffset[0, rank]+MasterOffset[1, rank], 1, dtype=int)
+            cols = np.zeros(0, dtype=int)
+            for i in range(0, size):
+                if i != rank:
+                    cols = np.concatenate((cols, np.arange(
+                        MasterOffset[0, i],  MasterOffset[0, i]+MasterOffset[1, i], 1, dtype=int)))
+            if rank == 1:
+                print(rows)
+            submatrix = A_perm[np.ix_(rows, cols)]
+            off_diagonal_approximation = CustomOffDiagonalApproximation(
+                hmat, submatrix)
+
+        hmat.set_off_diagonal_approximation(
+            off_diagonal_approximation)
+
     hmat.build(generator, p)
 
     # Global vectors

@@ -4,6 +4,7 @@
 #include "hmatrix.hpp"
 #include "lrmat_generator.hpp"
 #include "matrix.hpp"
+#include "off_diagonal_approximation.hpp"
 #include "wrapper_mpi.hpp"
 
 PYBIND11_MODULE(Htool, m) {
@@ -26,6 +27,9 @@ PYBIND11_MODULE(Htool, m) {
 
     declare_HMatrix<double>(m, "HMatrixVirtual", "HMatrix");
     declare_HMatrix<std::complex<double>>(m, "ComplexHMatrixVirtual", "ComplexHMatrix");
+
+    declare_VirtualOffDiagonalApproximation<double>(m, "VirtualOffDiagonalApproximation", "CustomOffDiagonalApproximation", "HMatrixOffDiagonalApproximation");
+    declare_VirtualOffDiagonalApproximation<std::complex<double>>(m, "ComplexVirtualOffDiagonalApproximation", "ComplexCustomOffDiagonalApproximation", "ComplexHMatrixOffDiagonalApproximation");
 
     declare_DDM<double>(m, "DDM");
     declare_DDM<std::complex<double>>(m, "ComplexDDM");

@@ -38,6 +38,12 @@ class GeneratorSubMatrix(Htool.VirtualGenerator):
                     Y[i, j] += self.get_coef(i, k)*X[k, j]
         return Y
 
+    def inplace_matmat(self, X, Y):
+        for i in range(0, self.nb_rows()):
+            for j in range(0, X.shape[1]):
+                for k in range(0, self.nb_cols()):
+                    Y[i, j] += self.get_coef(i, k)*X[k, j]
+
 
 class CustomSVD(Htool.CustomLowRankGenerator):
 
@@ -58,6 +64,16 @@ class CustomSVD(Htool.CustomLowRankGenerator):
         self.set_rank(count)
 
 
+class CustomOffDiagonalApproximation(Htool.CustomOffDiagonalApproximation):
+    def __init__(self, HA, off_diagonal_points_target, off_diagonal_points_source):
+        Htool.CustomOffDiagonalApproximation.__init__(self, HA)
+        self.off_diagonal_generator = GeneratorSubMatrix(
+            off_diagonal_points_target, off_diagonal_points_source)
+
+    def mat_mat_prod_global_to_local(self, x, y):
+        self.off_diagonal_generator.inplace_matmat(x, y)
+
+
 class DenseBlockGenerator(Htool.CustomDenseBlocksGenerator):
     def __init__(self, points_target, points_source):
         super().__init__()
@@ -76,20 +92,36 @@ class DenseBlockGenerator(Htool.CustomDenseBlocksGenerator):
                         self.points_target[:, rows[i][j]] - self.points_source[:, cols[i][k]]))
 
 
-@pytest.mark.parametrize("NbRows,NbCols,Symmetric,UPLO,Compression,Delay", [
-    (500, 500, 'S', 'L', None, False),
-    (500, 500, 'S', 'U', None, False),
-    (500, 500, 'N', 'N', None, False),
-    (500, 250, 'N', 'N', None, False),
-    (500, 500, 'S', 'L', None, True),
-    (500, 500, 'S', 'U', None, True),
-    (500, 500, 'N', 'N', None, True),
-    (500, 500, 'S', 'L', "Custom", True),
-    (500, 500, 'S', 'U', "Custom", True),
-    (500, 500, 'N', 'N', "Custom", True),
-    (500, 250, 'N', 'N', "Custom", True),
+@pytest.mark.parametrize("NbRows,NbCols,Symmetric,UPLO,Compression,Delay,OffDiagonalApproximation", [
+    (500, 500, 'S', 'L', None, False, None),
+    (500, 500, 'S', 'U', None, False, None),
+    (500, 500, 'N', 'N', None, False, None),
+    (500, 250, 'N', 'N', None, False, None),
+    (500, 500, 'S', 'L', None, True, None),
+    (500, 500, 'S', 'U', None, True, None),
+    (500, 500, 'N', 'N', None, True, None),
+    (500, 500, 'S', 'L', "Custom", True, None),
+    (500, 500, 'S', 'U', "Custom", True, None),
+    (500, 500, 'N', 'N', "Custom", True, None),
+    (500, 250, 'N', 'N', "Custom", True, None),
+    (500, 500, 'S', 'L', None, False, "Dense"),
+    (500, 500, 'S', 'U', None, False, "Dense"),
+    (500, 500, 'N', 'N', None, False, "Dense"),
+    (500, 250, 'N', 'N', None, False, "Dense"),
+    (500, 500, 'S', 'L', None, False, "HMatrix"),
+    (500, 500, 'S', 'U', None, False, "HMatrix"),
+    (500, 500, 'N', 'N', None, False, "HMatrix"),
+    (500, 250, 'N', 'N', None, False, "HMatrix"),
+    (500, 500, 'S', 'L', "Custom", False, "Dense"),
+    (500, 500, 'S', 'U', "Custom", False, "Dense"),
+    (500, 500, 'N', 'N', "Custom", False, "Dense"),
+    (500, 250, 'N', 'N', "Custom", False, "Dense"),
+    (500, 500, 'S', 'L', "Custom", False, "HMatrix"),
+    (500, 500, 'S', 'U', "Custom", False, "HMatrix"),
+    (500, 500, 'N', 'N', "Custom", False, "HMatrix"),
+    (500, 250, 'N', 'N', "Custom", False, "HMatrix"),
 ])
-def test_HMatrix(NbRows, NbCols, Symmetric, UPLO, Compression, Delay):
+def test_HMatrix(NbRows, NbCols, Symmetric, UPLO, Compression, Delay, OffDiagonalApproximation):
 
     # Random geometry
     np.random.seed(0)
@@ -126,6 +158,46 @@ def test_HMatrix(NbRows, NbCols, Symmetric, UPLO, Compression, Delay):
 
     HMatrix = Htool.HMatrix(cluster_target, cluster_source,
                             epsilon, eta, Symmetric, UPLO)
+
+    if OffDiagonalApproximation is not None:
+        # Geometry
+        off_diagonal_points_target, off_diagonal_points_source = HMatrix.get_off_diagonal_geometries(
+            points_target, points_source)
+
+        if OffDiagonalApproximation == "Dense":
+            off_diagonal_approximation = CustomOffDiagonalApproximation(HMatrix,
+                                                                        off_diagonal_points_target, off_diagonal_points_source)
+
+        if OffDiagonalApproximation == "HMatrix":
+            # Clustering
+            off_diagonal_cluster_target = Htool.PCARegularClustering(3)
+            off_diagonal_cluster_source = Htool.PCARegularClustering(3)
+            off_diagonal_cluster_target.set_minclustersize(minclustersize)
+            off_diagonal_cluster_source.set_minclustersize(minclustersize)
+            off_diagonal_cluster_target.build(
+                off_diagonal_points_target.shape[1], off_diagonal_points_target, 2, mpi4py.MPI.COMM_SELF)
+            off_diagonal_cluster_source.build(
+                off_diagonal_points_source.shape[1], off_diagonal_points_source, 2, mpi4py.MPI.COMM_SELF)
+
+            # Off diagonal generator
+            off_diagonal_generator = GeneratorSubMatrix(
+                off_diagonal_points_target, off_diagonal_points_source)
+
+            # Off diagonal HMatrix
+            off_diagonal_approximation = Htool.HMatrixOffDiagonalApproximation(
+                HMatrix, off_diagonal_cluster_target, off_diagonal_cluster_source)
+            if Compression is not None:
+                compression = CustomSVD()
+                off_diagonal_approximation.set_compression(compression)
+
+            off_diagonal_approximation.build(off_diagonal_generator,
+                                             off_diagonal_points_target, off_diagonal_points_source)
+
+            off_diagonal_approximation.print_infos()
+            off_diagonal_approximation.display(False)
+
+        HMatrix.set_off_diagonal_approximation(
+            off_diagonal_approximation)
 
     if Compression is not None:
         compression = CustomSVD()
