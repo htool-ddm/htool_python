@@ -1,0 +1,54 @@
+[project]
+name = "htool"
+version = "0.1"
+authors = [{ name = "Pierre Marchand", email = "test@test.com" }]
+description = "CLI utility to automate asciinema"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT License" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: Unix",
+]
+keywords = [
+    "kernel approximation",
+    "hierarchical matrix",
+    "domain decomposition method",
+]
+dependencies = ["mpi4py", "numpy"]
+
+
+[project.optional-dependencies]
+dev = ["ruff", "matplotlib>=3.0.0", "pytest", "scipy"]
+
+
+[project.urls]
+"Homepage" = "https://github.com/htool-ddm/htool_python"
+"Bug Tracker" = "https://github.com/htool-ddm/htool_python/issues"
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+exclude = ["lib", "cmake-format.py"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # Pyflakes
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "I",   # isort
+]
+ignore = []
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+
+[build-system]
+requires = ["setuptools>=42", "wheel", "cmake", "mpi4py", "numpy"]
+build-backend = "setuptools.build_meta"

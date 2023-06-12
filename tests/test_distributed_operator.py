@@ -1,0 +1,82 @@
+import Htool
+import matplotlib.pyplot as plt
+import mpi4py
+import numpy as np
+import pytest
+
+
+@pytest.mark.parametrize("epsilon", [1e-3, 1e-6])
+@pytest.mark.parametrize("eta", [10])
+@pytest.mark.parametrize("dimension", [2, 3])
+@pytest.mark.parametrize("nb_rhs", [1, 5])
+# @pytest.mark.parametrize(
+#     "use_default_build",
+#     [True, False],
+#     ids=["default_hmatrix_build", "custom_hmatrix_build"],
+# )
+@pytest.mark.parametrize(
+    "nb_rows,nb_cols,symmetry,UPLO,use_default_build,low_rank_approximation,dense_blocks_generator,local_operator,is_partition_given",
+    [
+        (400, 400, "S", "L", True, False, False, False, False),
+        (400, 400, "S", "U", True, False, False, False, False),
+        (400, 400, "N", "N", True, False, False, False, False),
+        (400, 200, "N", "N", True, False, False, False, False),
+        (400, 400, "S", "L", False, True, True, False, False),
+        (400, 400, "S", "U", False, True, True, False, False),
+        (400, 400, "N", "N", False, True, True, False, False),
+        (400, 200, "N", "N", False, True, True, False, False),
+        (400, 400, "S", "L", False, False, False, True, False),
+        (400, 400, "S", "U", False, False, False, True, False),
+        (400, 400, "N", "N", False, False, False, True, False),
+        (400, 200, "N", "N", False, False, False, True, False),
+        (400, 200, "N", "N", True, False, False, False, True),
+    ],
+    indirect=["low_rank_approximation", "dense_blocks_generator", "local_operator"],
+)
+def test_distributed_operator(
+    nb_cols,
+    nb_rhs,
+    epsilon,
+    generator,
+    use_default_build,
+    default_distributed_operator,
+    custom_distributed_operator,
+):
+    default_distributed_operator_holder = None
+    distributed_operator = None
+    if use_default_build:
+        default_distributed_operator_holder = default_distributed_operator
+        distributed_operator = default_distributed_operator_holder.distributed_operator
+        local_hmatrix = default_distributed_operator_holder.hmatrix
+
+        hmatrix_distributed_information = local_hmatrix.get_distributed_information(
+            mpi4py.MPI.COMM_WORLD
+        )
+        hmatrix_tree_parameter = local_hmatrix.get_tree_parameters()
+        hmatrix_local_information = local_hmatrix.get_local_information()
+        if mpi4py.MPI.COMM_WORLD.rank == 0:
+            print(hmatrix_distributed_information)
+            print(hmatrix_local_information)
+            print(hmatrix_tree_parameter)
+
+        fig = plt.figure()
+        ax1 = fig.add_subplot(1, 1, 1)
+        Htool.plot(ax1, local_hmatrix)
+        plt.close(fig)
+
+    else:
+        distributed_operator_holder = custom_distributed_operator
+        distributed_operator = distributed_operator_holder.distributed_operator
+
+    # Test matrix vector product
+    np.random.seed(0)
+    x = np.random.rand(nb_cols)
+    y_1 = distributed_operator * x
+    y_2 = generator.mat_vec(x)
+    assert np.linalg.norm(y_1 - y_2) / np.linalg.norm(y_2) < epsilon
+
+    # Test matrix matrix product
+    X = np.asfortranarray(np.random.rand(nb_cols, nb_rhs))
+    Y_1 = distributed_operator @ X
+    Y_2 = generator.mat_mat(X)
+    assert np.linalg.norm(Y_1 - Y_2) / np.linalg.norm(Y_2) < epsilon
