@@ -13,13 +13,13 @@ else()
         LANGUAGES CXX)
 endif()
 
-# To force c++11
+# To force c++14
 if(${CMAKE_VERSION} VERSION_LESS 3.1)
-    add_compile_options(-std=c++11)
+    add_compile_options(-std=c++14)
 elseif(${CMAKE_VERSION} VERSION_LESS 3.6.3 AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-    add_compile_options(-std=c++11)
+    add_compile_options(-std=c++14)
 else()
-    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
@@ -85,4 +85,4 @@ if(CODE_COVERAGE AND (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID
     target_link_libraries(Htool PRIVATE gcov)
 endif()
 
-# target_compile_features(Htool INTERFACE cxx_std_11)
+# target_compile_features(Htool INTERFACE cxx_std_14)

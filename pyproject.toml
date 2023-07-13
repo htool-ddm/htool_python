@@ -1,0 +1,41 @@
+[project]
+name = "htool"
+version = "0.1"
+authors = [{ name = "Pierre Marchand", email = "test@test.com" }]
+description = "CLI utility to automate asciinema"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT License" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: Unix",
+]
+keywords = [
+    "kernel approximation",
+    "hierarchical matrix",
+    "domain decomposition method",
+]
+dependencies = ["mpi4py", "numpy"]
+
+
+[project.optional-dependencies]
+dev = ["black", "bumpver", "isort", "pytest"]
+test = ["pytest"]
+
+
+[project.urls]
+"Homepage" = "https://github.com/htool-ddm/htool_python"
+"Bug Tracker" = "https://github.com/htool-ddm/htool_python/issues"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+
+[build-system]
+requires = ["setuptools>=42", "wheel", "ninja", "cmake>=3.12"]
+build-backend = "setuptools.build_meta"
