@@ -6,6 +6,8 @@ import os
 import struct
 import pathlib
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+print("PATH", dir_path, os.getcwd())
 from example.define_custom_generators import CustomGenerator
 from example.define_custom_dense_blocks_generator import CustomDenseBlocksGenerator
 from example.define_custom_local_operator import CustomLocalOperator
@@ -253,7 +255,7 @@ def load_data_solver(symmetry, mu):
     #
     path_to_data = pathlib.Path(
         os.path.dirname(__file__)
-        + "/../lib/htool/build/_deps/data_test_repository-src/data/output_"
+        + "/../lib/htool_generate_data_test/data/output_"
         + folder
     )
     # Matrix
