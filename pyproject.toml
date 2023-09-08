@@ -22,7 +22,7 @@ dependencies = ["mpi4py", "numpy"]
 
 [project.optional-dependencies]
 dev = ["black", "bumpver", "isort", "pytest"]
-test = ["pytest"]
+test = ["matplotlib>=3.0.0", "pytest"]
 
 
 [project.urls]
@@ -37,5 +37,5 @@ profile = "black"
 
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "ninja", "cmake>=3.12"]
+requires = ["setuptools>=42", "wheel", "cmake>=3.10", "mpi4py", "numpy"]
 build-backend = "setuptools.build_meta"

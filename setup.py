@@ -61,7 +61,7 @@ class CMakeBuild(build_ext):
             # exported for Ninja to pick it up, which is a little tricky to do.
             # Users can override the generator with CMAKE_GENERATOR in CMake
             # 3.15+.
-            if not cmake_generator or cmake_generator == "Ninja":
+            if cmake_generator == "Ninja":
                 try:
                     import ninja
 
@@ -158,7 +158,7 @@ class CMakeBuild(build_ext):
 
 setup(
     name="Htool",
-    version="1.0.0",
+    version="0.9.0",
     author="Pierre Marchand",
     author_email="",
     description="A pybind11 interface to Htool, a header only c++ library that provides Hierarchical matrices.",
@@ -166,10 +166,4 @@ setup(
     ext_modules=[CMakeExtension("Htool")],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
-    install_requires=[
-        "numpy>=1.0.0",
-        "scipy>=1.0.0",
-        "mpi4py>=3.0.0",
-        "matplotlib>=3.0.0",
-    ],
 )

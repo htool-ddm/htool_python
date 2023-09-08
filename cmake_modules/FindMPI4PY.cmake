@@ -7,24 +7,27 @@
 # https://compacc.fnal.gov/projects/repositories/entry/synergia2/CMake/FindMPI4PY.cmake?rev=c147eafb60728606af4fe7b1b161a660df142e9a
 
 if(NOT MPI4PY_INCLUDE_DIR)
-    execute_process(COMMAND
-      "python3" "-c" "import mpi4py; print(mpi4py.get_include())"
-      OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
-      RESULT_VARIABLE MPI4PY_COMMAND_RESULT
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+        COMMAND "${PYTHON_EXECUTABLE}" "-c" "import mpi4py; print(mpi4py.get_include())"
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
+        RESULT_VARIABLE MPI4PY_COMMAND_RESULT
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(MPI4PY_COMMAND_RESULT)
         message("jfa: mpi4py not found")
         set(MPI4PY_FOUND FALSE)
     else(MPI4PY_COMMAND_RESULT)
-        if (MPI4PY_INCLUDE_DIR MATCHES "Traceback")
+        if(MPI4PY_INCLUDE_DIR MATCHES "Traceback")
             message("jfa: mpi4py matches traceback")
             ## Did not successfully include MPI4PY
             set(MPI4PY_FOUND FALSE)
-        else (MPI4PY_INCLUDE_DIR MATCHES "Traceback")
+        else(MPI4PY_INCLUDE_DIR MATCHES "Traceback")
             ## successful
             set(MPI4PY_FOUND TRUE)
-            set(MPI4PY_INCLUDE_DIR ${MPI4PY_INCLUDE_DIR} CACHE STRING "mpi4py include path")
-        endif (MPI4PY_INCLUDE_DIR MATCHES "Traceback")
+            set(MPI4PY_INCLUDE_DIR
+                ${MPI4PY_INCLUDE_DIR}
+                CACHE STRING "mpi4py include path")
+        endif(MPI4PY_INCLUDE_DIR MATCHES "Traceback")
     endif(MPI4PY_COMMAND_RESULT)
 else(NOT MPI4PY_INCLUDE_DIR)
     set(MPI4PY_FOUND TRUE)
