@@ -37,5 +37,5 @@ profile = "black"
 
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "cmake>=3.10", "mpi4py", "numpy"]
+requires = ["setuptools>=42", "wheel", "cmake", "mpi4py", "numpy"]
 build-backend = "setuptools.build_meta"
