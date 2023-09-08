@@ -1,10 +1,11 @@
-import Htool
-import numpy as np
-import mpi4py
-from define_custom_generators import CustomGenerator
-from define_custom_dense_blocks_generator import CustomDenseBlocksGenerator
-from create_geometry import create_partitionned_geometries
 import matplotlib.pyplot as plt
+import mpi4py
+import numpy as np
+from create_geometry import create_partitionned_geometries
+from define_custom_dense_blocks_generator import CustomDenseBlocksGenerator
+from define_custom_generators import CustomGenerator
+
+import Htool
 
 # Random geometry
 nb_rows = 500

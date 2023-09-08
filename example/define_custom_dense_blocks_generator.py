@@ -1,5 +1,6 @@
-import Htool
 import mpi4py
+
+import Htool
 
 
 class CustomDenseBlocksGenerator(Htool.VirtualDenseBlocksGenerator):

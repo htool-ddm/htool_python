@@ -1,9 +1,10 @@
-import Htool
-import numpy as np
-import mpi4py
-from define_custom_generators import CustomGeneratorWithPermutation
-from create_geometry import create_random_geometries
 import matplotlib.pyplot as plt
+import mpi4py
+import numpy as np
+from create_geometry import create_random_geometries
+from define_custom_generators import CustomGeneratorWithPermutation
+
+import Htool
 
 # Random geometry
 size = 500

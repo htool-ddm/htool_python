@@ -1,15 +1,14 @@
-import pytest
-import mpi4py
-import Htool
-import numpy as np
 import os
-import struct
 import pathlib
+import struct
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
-print("PATH", dir_path, os.getcwd())
-from example.define_custom_generators import CustomGenerator
+import mpi4py
+import numpy as np
+import pytest
+
+import Htool
 from example.define_custom_dense_blocks_generator import CustomDenseBlocksGenerator
+from example.define_custom_generators import CustomGenerator
 from example.define_custom_local_operator import CustomLocalOperator
 from example.define_custom_low_rank_generator import CustomSVD
 

@@ -1,9 +1,10 @@
-import Htool
-import numpy as np
 import mpi4py
+import numpy as np
+from create_geometry import create_partitionned_geometries
 from define_custom_generators import CustomGenerator
 from define_custom_low_rank_generator import CustomSVD
-from create_geometry import create_partitionned_geometries
+
+import Htool
 
 # Random geometry
 nb_rows = 500

@@ -1,8 +1,9 @@
-import Htool
-import numpy as np
-import mpi4py
-from create_geometry import create_random_geometries
 import matplotlib.pyplot as plt
+import mpi4py
+import numpy as np
+from create_geometry import create_random_geometries
+
+import Htool
 
 # Random geometry
 nb_rows = 500

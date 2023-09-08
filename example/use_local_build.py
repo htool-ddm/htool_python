@@ -1,12 +1,13 @@
-import Htool
-import numpy as np
-import mpi4py
-from define_custom_generators import CustomGenerator
-from define_custom_local_operator import CustomLocalOperator
-from create_geometry import create_partitionned_geometries, create_random_geometries
+import logging
 
 import matplotlib.pyplot as plt
-import logging
+import mpi4py
+import numpy as np
+from create_geometry import create_partitionned_geometries, create_random_geometries
+from define_custom_generators import CustomGenerator
+from define_custom_local_operator import CustomLocalOperator
+
+import Htool
 
 # Random geometry
 target_size = 500

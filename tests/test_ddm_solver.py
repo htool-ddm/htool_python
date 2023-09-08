@@ -1,13 +1,15 @@
-import Htool
-import numpy as np
-from mpi4py import MPI
 import math
-import struct
 import os
-import mpi4py
-import pytest
 import pathlib
+import struct
+
+import mpi4py
+import numpy as np
+import pytest
 from conftest import GeneratorFromMatrix
+from mpi4py import MPI
+
+import Htool
 
 
 @pytest.mark.parametrize("epsilon", [1e-3, 1e-6])

@@ -1,7 +1,8 @@
-import pytest
-import Htool
 import mpi4py
 import numpy as np
+import pytest
+
+import Htool
 
 
 @pytest.mark.parametrize("epsilon", [1e-3, 1e-6])
@@ -16,15 +17,15 @@ import numpy as np
 @pytest.mark.parametrize(
     "nb_rows,nb_cols,symmetry,UPLO,use_default_build,low_rank_approximation,dense_blocks_generator,local_operator,is_partition_given",
     [
-        (500, 500, "S", "L", True, False, False, False, False),
-        (500, 500, "S", "U", True, False, False, False, False),
-        (500, 500, "N", "N", True, False, False, False, False),
-        (500, 250, "N", "N", True, False, False, False, False),
-        (500, 500, "S", "L", False, True, True, True, False),
-        (500, 500, "S", "U", False, True, True, True, False),
-        (500, 500, "N", "N", False, True, True, True, False),
-        (500, 250, "N", "N", False, True, True, True, False),
-        (500, 250, "N", "N", True, False, False, False, True),
+        (400, 400, "S", "L", True, False, False, False, False),
+        (400, 400, "S", "U", True, False, False, False, False),
+        (400, 400, "N", "N", True, False, False, False, False),
+        (400, 200, "N", "N", True, False, False, False, False),
+        (400, 400, "S", "L", False, True, True, True, False),
+        (400, 400, "S", "U", False, True, True, True, False),
+        (400, 400, "N", "N", False, True, True, True, False),
+        (400, 200, "N", "N", False, True, True, True, False),
+        (400, 200, "N", "N", True, False, False, False, True),
     ],
     indirect=["low_rank_approximation", "dense_blocks_generator", "local_operator"],
 )
@@ -42,6 +43,8 @@ def test_distributed_operator(
     if use_default_build:
         default_distributed_operator_holder = default_distributed_operator
         distributed_operator = default_distributed_operator_holder.distributed_operator
+        local_hmatrix = default_distributed_operator_holder.hmatrix
+        print(local_hmatrix.get_information())
     else:
         distributed_operator = custom_distributed_operator
 
