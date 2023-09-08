@@ -130,7 +130,7 @@ jobs:
         if: matrix.CODE_COVERAGE == 'ON'
         run: |
           mkdir build && cd build
-          pip3 install numpy matplotlib pytest
+          pip3 install numpy matplotlib pytest mpi4py
           CC=${{ matrix.CC_COMPILER }} CXX=${{ matrix.CXX_COMPILER }} cmake -DUSE_SANITIZER=${{ matrix.USE_SANITIZER }} -DCMAKE_BUILD_TYPE=${{ matrix.CMAKE_BUILD_TYPE }} -DCODE_COVERAGE=${{ matrix.CODE_COVERAGE }} ../
           make
 
