@@ -2,6 +2,7 @@
 #define HTOOL_DDM_SOLVER_CPP
 
 #include "htool/solvers/ddm.hpp"
+#include <pybind11/stl.h>
 #include <string>
 
 namespace py = pybind11;
@@ -80,7 +81,8 @@ void declare_DDM(py::module &m, const std::string &className) {
         opt.parse(hpddm_args);
     });
     // py_class.def("print_infos", &Class::print_infos);
-    // py_class.def("get_infos", &Class::get_infos);
+    py_class.def("get_information", py::overload_cast<>(&Class::get_information, py::const_));
+    py_class.def("get_information", py::overload_cast<const std::string &>(&Class::get_information, py::const_));
 }
 
 #endif

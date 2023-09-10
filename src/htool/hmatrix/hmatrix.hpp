@@ -85,6 +85,12 @@ void declare_HMatrix(py::module &m, const std::string &className) {
     // py_class.def("__str__", [](const Class &self) {
     //     return "HMatrix: (shape: " + htool::NbrToStr(self.nb_cols()) + "x" + htool::NbrToStr(self.nb_rows()) + ", nb_low_rank_blocks: " + htool::NbrToStr(self.get_nlrmat()) + ", nb_dense_blocks: " + htool::NbrToStr(self.get_ndmat()) + ")";
     // });
+
+    py_class.def(
+        "get_block_diagonal_hmatrix", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
+            return &*hmatrix.get_diagonal_hmatrix();
+        },
+        py::return_value_policy::reference_internal);
     py_class.def("get_tree_parameters", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
         std::stringstream ss;
         htool::print_tree_parameters(hmatrix, ss);

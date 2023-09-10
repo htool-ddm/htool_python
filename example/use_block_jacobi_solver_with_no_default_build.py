@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
-from create_geometry import create_random_geometries
+from create_geometry import create_partitionned_geometries
 from define_custom_generators import CustomGenerator
 
 import Htool
@@ -9,8 +9,9 @@ import Htool
 # Random geometry
 size = 500
 dimension = 3
-
-[points, _] = create_random_geometries(dimension, size, size)
+[points, _, partition] = create_partitionned_geometries(
+    dimension, size, size, mpi4py.MPI.COMM_WORLD.size
+)
 
 
 # Htool parameters
@@ -23,35 +24,62 @@ number_of_children = 2
 cluster_builder = Htool.ClusterBuilder()
 cluster_builder.set_minclustersize(minclustersize)
 cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
-    points, number_of_children, mpi4py.MPI.COMM_WORLD.size
+    points, number_of_children, mpi4py.MPI.COMM_WORLD.size, partition
 )
+
 
 # Build generator
 generator = CustomGenerator(cluster, points, cluster, points)
 
-# Build distributed operator
-default_approximation = Htool.DefaultApproximationBuilder(
-    generator,
+# Build HMatrix
+hmatrix_builder = Htool.HMatrixBuilder(
     cluster,
     cluster,
     epsilon,
     eta,
     "S",
     "L",
+    -1,
+    mpi4py.MPI.COMM_WORLD.rank,
+)
+
+hmatrix: Htool.HMatrix = hmatrix_builder.build(generator)
+
+
+# Build local operator
+local_operator = Htool.LocalHMatrix(
+    hmatrix,
+    cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank),
+    cluster,
+    "N",
+    "N",
+    False,
+    False,
+)
+
+# Build distributed operator
+partition_from_cluster = Htool.PartitionFromCluster(cluster)
+distributed_operator = Htool.DistributedOperator(
+    partition_from_cluster,
+    partition_from_cluster,
+    "S",
+    "L",
     mpi4py.MPI.COMM_WORLD,
 )
 
+distributed_operator.add_local_operator(local_operator)
+
+
 # Solver with block Jacobi preconditionner
 default_solver_builder = Htool.DefaultSolverBuilder(
-    default_approximation.distributed_operator,
-    default_approximation.block_diagonal_hmatrix,
+    distributed_operator,
+    hmatrix.get_block_diagonal_hmatrix(),
 )
 solver = default_solver_builder.solver
 
-
 # Solver with block Jacobi
 x_ref = np.random.random(size)
-b = default_approximation.distributed_operator * x_ref
+b = distributed_operator * x_ref
 x = np.zeros(size)
 
 hpddm_args = "-hpddm_compute_residual l2 "
@@ -62,13 +90,13 @@ solver.facto_one_level()
 solver.solve(x, b)
 
 
-# Several ways to display information
+# Outputs
 if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
     print(np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref))
-    hmatrix = default_approximation.hmatrix
-    local_block_hmatrix = default_approximation.block_diagonal_hmatrix
     print(hmatrix.get_tree_parameters())
     print(hmatrix.get_information())
+    print(solver.get_information())
+    print(solver.get_information("Nb_it"))
 
     fig = plt.figure()
     ax1 = None
@@ -88,9 +116,10 @@ if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
 
     ax1.set_title("cluster at depth 1")
     ax2.set_title("cluster at depth 2")
-    ax4.set_title("Hmatrix on rank 0")
+    ax3.set_title("Hmatrix on rank 0")
+    ax4.set_title("Block diagonal Hmatrix on rank 0")
     Htool.plot(ax1, cluster, points, 1)
     Htool.plot(ax2, cluster, points, 2)
     Htool.plot(ax3, hmatrix)
-    Htool.plot(ax4, local_block_hmatrix)
+    Htool.plot(ax4, hmatrix.get_block_diagonal_hmatrix())
     plt.show()
