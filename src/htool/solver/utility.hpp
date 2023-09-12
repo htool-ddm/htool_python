@@ -19,5 +19,7 @@ void declare_solver_utility(py::module &m, std::string prefix = "") {
     default_ddm_solver_class.def(py::init<DistributedOperator<CoefficientPrecision> &, const HMatrix<CoefficientPrecision, CoordinatePrecision> *, const VirtualGeneratorWithPermutation<CoefficientPrecision> &, const std::vector<int> &, const std::vector<int> &, const std::vector<int> &, const std::vector<std::vector<int>> &>());
     default_ddm_solver_class.def_property_readonly(
         "solver", [](const DefaultDDMSolverBuilder &self) { return &self.solver; }, py::return_value_policy::reference_internal);
+    default_ddm_solver_class.def_property_readonly(
+        "local_to_global_numbering", [](const DefaultDDMSolverBuilder &self) { return &self.local_to_global_numbering; }, py::return_value_policy::reference_internal);
 }
 #endif
