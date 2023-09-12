@@ -87,8 +87,11 @@ void declare_virtual_generator(py::module &m, const std::string &className, cons
     py_class.def(py::init<>());
     py_class.def("build_submatrix", &Class::build_submatrix);
 
+    using BaseClassWithPermutation = VirtualGeneratorWithPermutation<CoefficientPrecision>;
+    py::class_<BaseClassWithPermutation, BaseClass>(m, (base_class_name + "WithPermutation").c_str());
+
     using ClassWithPermutation = VirtualGeneratorWithPermutationPython<CoefficientPrecision>;
-    py::class_<ClassWithPermutation, BaseClass, PyVirtualGeneratorWithPermutation<CoefficientPrecision>> py_class_with_permutation(m, (className + "WithPermutation").c_str());
+    py::class_<ClassWithPermutation, BaseClassWithPermutation, PyVirtualGeneratorWithPermutation<CoefficientPrecision>> py_class_with_permutation(m, (className + "WithPermutation").c_str());
     py_class_with_permutation.def(py::init<const py::array_t<int> &, const py::array_t<int> &>());
     py_class_with_permutation.def("build_submatrix", &ClassWithPermutation::build_submatrix);
 }
