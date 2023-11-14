@@ -80,9 +80,7 @@ void declare_DDM(py::module &m, const std::string &className) {
         HPDDM::Option &opt = *HPDDM::Option::get();
         opt.parse(hpddm_args);
     });
-    // py_class.def("print_infos", &Class::print_infos);
     py_class.def("get_information", py::overload_cast<>(&Class::get_information, py::const_));
-    py_class.def("get_information", py::overload_cast<const std::string &>(&Class::get_information, py::const_));
 }
 
 #endif

@@ -6,7 +6,10 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "../misc/wrapper_mpi.hpp"
+
 #include <htool/hmatrix/hmatrix.hpp>
+#include <htool/hmatrix/hmatrix_distributed_output.hpp>
 #include <htool/hmatrix/hmatrix_output.hpp>
 
 namespace py = pybind11;
@@ -92,16 +95,16 @@ void declare_HMatrix(py::module &m, const std::string &className) {
         },
         py::return_value_policy::reference_internal);
     py_class.def("get_tree_parameters", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
-        std::stringstream ss;
-        htool::print_tree_parameters(hmatrix, ss);
-
-        return ss.str();
+        auto tree_parameters = htool::get_tree_parameters(hmatrix);
+        return tree_parameters;
     });
-    py_class.def("get_information", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
-        std::stringstream ss;
-        htool::print_hmatrix_information(hmatrix, ss);
-
-        return ss.str();
+    py_class.def("get_local_information", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
+        auto information = htool::get_hmatrix_information(hmatrix);
+        return information;
+    });
+    py_class.def("get_distributed_information", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix, MPI_Comm_wrapper comm) {
+        auto information = htool::get_distributed_hmatrix_information(hmatrix, comm);
+        return information;
     });
 
     // Plot pattern

@@ -91,12 +91,18 @@ solver.solve(x, b)
 
 
 # Outputs
+hmatrix_distributed_information = hmatrix.get_distributed_information(
+    mpi4py.MPI.COMM_WORLD
+)
+hmatrix_tree_parameter = hmatrix.get_tree_parameters()
+hmatrix_local_information = hmatrix.get_local_information()
+solver_information = solver.get_information()
 if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
     print(np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref))
-    print(hmatrix.get_tree_parameters())
-    print(hmatrix.get_information())
-    print(solver.get_information())
-    print(solver.get_information("Nb_it"))
+    print(hmatrix_distributed_information)
+    print(hmatrix_local_information)
+    print(hmatrix_tree_parameter)
+    print(solver_information)
 
     fig = plt.figure()
     ax1 = None

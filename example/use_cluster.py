@@ -1,15 +1,19 @@
 import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
-from create_geometry import create_random_geometries
+from create_geometry import (
+    create_partitionned_geometries_test,
+    create_random_geometries,
+)
 
 import Htool
 
 # Random geometry
 nb_rows = 500
 nb_cols = 500
-dimension = 2
+dimension = 3
 [target_points, _] = create_random_geometries(dimension, nb_rows, nb_cols)
+# [target_points, _, _] = create_partitionned_geometries_test(3, nb_rows, nb_cols, 1)
 
 
 # Parameters
@@ -21,8 +25,8 @@ cluster_builder = Htool.ClusterBuilder()
 cluster_builder.set_minclustersize(minclustersize)
 
 # Strategies
-direction_computation_strategy = Htool.ComputeBoundingBox()
-# direction_computation_strategy = Htool.ComputeLargestExtent() # default
+# direction_computation_strategy = Htool.ComputeBoundingBox()
+direction_computation_strategy = Htool.ComputeLargestExtent()  # default
 splitting_strategy = Htool.RegularSplitting()  # default
 # splitting_strategy = Htool.GeometricSplitting()
 cluster_builder.set_direction_computation_strategy(direction_computation_strategy)
@@ -55,5 +59,5 @@ if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
     ax1.set_title("target cluster\ndepth 2")
     ax2.set_title("local cluster\ntarget partition number 0\ndepth 1")
     Htool.plot(ax1, target_cluster, target_points, 1)
-    Htool.plot(ax2, local_target_cluster, target_points, 3)
+    Htool.plot(ax2, local_target_cluster, target_points, 4)
     plt.show()

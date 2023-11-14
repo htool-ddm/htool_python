@@ -145,10 +145,16 @@ Y_2 = generator.mat_mat(X)
 print(mpi4py.MPI.COMM_WORLD.rank, np.linalg.norm(Y_1 - Y_2) / np.linalg.norm(Y_2))
 
 # Several ways to display information
+hmatrix = default_local_approximation.hmatrix
+hmatrix_distributed_information = hmatrix.get_distributed_information(
+    mpi4py.MPI.COMM_WORLD
+)
+hmatrix_tree_parameter = hmatrix.get_tree_parameters()
+hmatrix_local_information = hmatrix.get_local_information()
 if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
-    hmatrix = default_local_approximation.hmatrix
-    print(hmatrix.get_tree_parameters())
-    print(hmatrix.get_information())
+    print(hmatrix_distributed_information)
+    print(hmatrix_local_information)
+    print(hmatrix_tree_parameter)
 
     fig = plt.figure()
     ax1 = None
