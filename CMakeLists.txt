@@ -78,6 +78,15 @@ target_include_directories(
             ${MPI4PY_INCLUDE_DIR})
 target_link_libraries(Htool PRIVATE ${MPI_LIBRARIES} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} ${ARPACK_LIBRARIES} ${OpenMP_CXX_LIBRARIES})
 
+if("${BLA_VENDOR}" STREQUAL "Intel10_32"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64lp"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64lp_seq"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64ilp"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64ilp_seq"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64_dyn")
+    target_compile_definitions(htool PRIVATE "-DHPDDM_MKL -DHTOOL_MKL")
+endif()
+
 target_compile_definitions(Htool PRIVATE "-DPYTHON_INTERFACE" "-DWITH_HPDDM")
 
 if(CODE_COVERAGE AND (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
