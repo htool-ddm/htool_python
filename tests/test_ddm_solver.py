@@ -159,18 +159,18 @@ def test_ddm_solver(
         ) / np.linalg.norm(f)
         solution_error = np.linalg.norm(x[:, 1] - x_ref) / np.linalg.norm(x_ref)
     # error = np.linalg.norm(distributed_operator * x - f)
-    if mpi4py.MPI.COMM_WORLD.rank == 0:
-        print(
-            iterative_solver,
-            hpddm_schwarz_method,
-            hpddm_schwarz_coarse_correction,
-            epsilon,
-            solver.get_information("Nb_it"),
-            # error,
-            # np.linalg.norm(f),
-            # error / np.linalg.norm(f),
-            # hpddm_args,
-        )
+    # if mpi4py.MPI.COMM_WORLD.rank == 0:
+    #     print(
+    #         iterative_solver,
+    #         hpddm_schwarz_method,
+    #         hpddm_schwarz_coarse_correction,
+    #         epsilon,
+    #         solver.get_information("Nb_it"),
+    #         # error,
+    #         # np.linalg.norm(f),
+    #         # error / np.linalg.norm(f),
+    #         # hpddm_args,
+    #     )
     # print(
     #     np.linalg.norm(distributed_operator * x - f),
     #     np.linalg.norm(f),

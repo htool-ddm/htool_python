@@ -44,7 +44,7 @@ def test_distributed_operator(
         default_distributed_operator_holder = default_distributed_operator
         distributed_operator = default_distributed_operator_holder.distributed_operator
         local_hmatrix = default_distributed_operator_holder.hmatrix
-        print(local_hmatrix.get_information())
+        print(local_hmatrix.get_local_information())
     else:
         distributed_operator = custom_distributed_operator
 
