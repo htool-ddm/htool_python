@@ -47,12 +47,14 @@ class VirtualGeneratorWithPermutationPython : public htool::VirtualGeneratorWith
     VirtualGeneratorWithPermutationPython(const py::array_t<int> &target_permutation, const py::array_t<int> &source_permutation) : VirtualGeneratorWithPermutation<CoefficientPrecision>(target_permutation.data(), source_permutation.data()) {}
 
     void copy_submatrix_from_user_numbering(int M, int N, const int *const rows, const int *const cols, CoefficientPrecision *ptr) const override {
+        if (M * N > 0) {
+            py::array_t<CoefficientPrecision, py::array::f_style> mat(std::array<long int, 2>{M, N}, ptr, py::capsule(ptr));
 
-        py::array_t<CoefficientPrecision, py::array::f_style> mat(std::array<long int, 2>{M, N}, ptr, py::capsule(ptr));
-        py::array_t<int> py_rows(std::array<long int, 2>{M, 1}, rows, py::capsule(rows));
-        py::array_t<int> py_cols(std::array<long int, 2>{N, 1}, cols, py::capsule(cols));
+            py::array_t<int> py_rows(std::array<long int, 2>{M, 1}, rows, py::capsule(rows));
+            py::array_t<int> py_cols(std::array<long int, 2>{N, 1}, cols, py::capsule(cols));
 
-        build_submatrix(py_rows, py_cols, mat);
+            build_submatrix(py_rows, py_cols, mat);
+        }
     }
 
     // lcov does not see it because of trampoline I assume

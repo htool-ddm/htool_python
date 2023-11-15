@@ -97,7 +97,7 @@ if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
 
     ax1.set_title("cluster at depth 1")
     ax2.set_title("cluster at depth 2")
-    ax4.set_title("Hmatrix on rank 0")
+    ax3.set_title("Hmatrix on rank 0")
     ax4.set_title("Block diagonal Hmatrix on rank 0")
     Htool.plot(ax1, cluster, points, 1)
     Htool.plot(ax2, cluster, points, 2)

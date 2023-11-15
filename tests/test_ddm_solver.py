@@ -124,7 +124,7 @@ def test_ddm_solver(
         + restart
         + " -hpddm_schwarz_method "
         + hpddm_schwarz_method
-        + " -hpddm_max_it 200 -hpddm_variant right -hpddm_compute_residual l2 -hpddm_tol "
+        + " -hpddm_max_it 200 -hpddm_variant right -hpddm_tol "
         + str(tol)
     )
 
