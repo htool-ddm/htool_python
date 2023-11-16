@@ -90,8 +90,8 @@ void declare_HMatrix(py::module &m, const std::string &className) {
     // });
 
     py_class.def(
-        "get_block_diagonal_hmatrix", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
-            return &*hmatrix.get_diagonal_hmatrix();
+        "get_sub_hmatrix", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix, const Cluster<CoordinatePrecision> &target_cluster, const Cluster<CoordinatePrecision> &source_cluster) {
+            return &*hmatrix.get_sub_hmatrix(target_cluster, source_cluster);
         },
         py::return_value_policy::reference_internal);
     py_class.def("get_tree_parameters", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {

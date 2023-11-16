@@ -71,9 +71,13 @@ distributed_operator.add_local_operator(local_operator)
 
 
 # Solver with block Jacobi preconditionner
+block_diagonal_hmatrix = hmatrix.get_sub_hmatrix(
+    cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank),
+    cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank),
+)
 default_solver_builder = Htool.DefaultSolverBuilder(
     distributed_operator,
-    hmatrix.get_block_diagonal_hmatrix(),
+    block_diagonal_hmatrix,
 )
 solver = default_solver_builder.solver
 
@@ -127,5 +131,5 @@ if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
     Htool.plot(ax1, cluster, points, 1)
     Htool.plot(ax2, cluster, points, 2)
     Htool.plot(ax3, hmatrix)
-    Htool.plot(ax4, hmatrix.get_block_diagonal_hmatrix())
+    Htool.plot(ax4, block_diagonal_hmatrix)
     plt.show()
