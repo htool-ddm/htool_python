@@ -72,11 +72,13 @@ PYBIND11_MODULE(Htool, m) {
     declare_distributed_operator_utility<double, double>(m);
 
     declare_DDM<double>(m, "Solver");
+    declare_solver_utility(m);
     declare_solver_utility<double, double>(m);
 
     declare_matplotlib_cluster<double>(m);
     declare_matplotlib_hmatrix<double, double>(m);
 
+    declare_hmatrix_builder<std::complex<double>, double>(m, "ComplexHMatrixBuilder");
     declare_HMatrix<std::complex<double>, double>(m, "ComplexHMatrix");
     declare_virtual_generator<std::complex<double>>(m, "ComplexVirtualGenerator", "IComplexGenerator");
 

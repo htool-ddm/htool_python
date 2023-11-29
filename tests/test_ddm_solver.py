@@ -3,10 +3,11 @@ import os
 import pathlib
 import struct
 
+import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
 import pytest
-from conftest import GeneratorFromMatrix
+from conftest import GeneratorFromMatrix, LocalGeneratorFromMatrix
 from mpi4py import MPI
 
 import Htool
@@ -16,32 +17,44 @@ import Htool
 @pytest.mark.parametrize("eta", [10])
 @pytest.mark.parametrize("tol", [1e-6])
 @pytest.mark.parametrize(
-    "mu,symmetry,overlap,hpddm_schwarz_method,hpddm_schwarz_coarse_correction",
+    "mu,symmetry,ddm_builder,hpddm_schwarz_method,hpddm_schwarz_coarse_correction",
     [
-        (1, "N", False, "none", "none"),
-        (1, "N", False, "asm", "none"),
-        (1, "N", False, "ras", "none"),
-        (1, "N", True, "asm", "none"),
-        (1, "N", True, "ras", "none"),
-        (10, "N", False, "none", "none"),
-        (10, "N", False, "asm", "none"),
-        (10, "N", False, "ras", "none"),
-        (10, "N", True, "asm", "none"),
-        (10, "N", True, "ras", "none"),
-        (1, "S", False, "none", "none"),
-        (1, "S", False, "asm", "none"),
-        (1, "S", False, "ras", "none"),
-        (1, "S", True, "asm", "none"),
-        (1, "S", True, "ras", "none"),
-        (10, "S", False, "none", "none"),
-        (10, "S", False, "asm", "none"),
-        (10, "S", False, "ras", "none"),
-        (10, "S", True, "asm", "none"),
-        (10, "S", True, "ras", "none"),
-        (1, "S", True, "asm", "additive"),
-        (1, "S", True, "ras", "additive"),
-        (10, "S", True, "asm", "additive"),
-        (10, "S", True, "ras", "additive"),
+        (1, "N", "SolverBuilder", "none", "none"),
+        (1, "N", "SolverBuilder", "asm", "none"),
+        (1, "N", "SolverBuilder", "ras", "none"),
+        (1, "N", "DDMSolverBuilderAddingOverlap", "asm", "none"),
+        (1, "N", "DDMSolverBuilderAddingOverlap", "ras", "none"),
+        (1, "N", "DDMSolverBuilder", "asm", "none"),
+        (1, "N", "DDMSolverBuilder", "ras", "none"),
+        (10, "N", "SolverBuilder", "none", "none"),
+        (10, "N", "SolverBuilder", "asm", "none"),
+        (10, "N", "SolverBuilder", "ras", "none"),
+        (10, "N", "DDMSolverBuilderAddingOverlap", "asm", "none"),
+        (10, "N", "DDMSolverBuilderAddingOverlap", "ras", "none"),
+        (10, "N", "DDMSolverBuilder", "asm", "none"),
+        (10, "N", "DDMSolverBuilder", "ras", "none"),
+        (1, "S", "SolverBuilder", "none", "none"),
+        (1, "S", "SolverBuilder", "asm", "none"),
+        (1, "S", "SolverBuilder", "ras", "none"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "none"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "none"),
+        (1, "S", "DDMSolverBuilder", "asm", "none"),
+        (1, "S", "DDMSolverBuilder", "ras", "none"),
+        (10, "S", "SolverBuilder", "none", "none"),
+        (10, "S", "SolverBuilder", "asm", "none"),
+        (10, "S", "SolverBuilder", "ras", "none"),
+        (10, "S", "DDMSolverBuilderAddingOverlap", "asm", "none"),
+        (10, "S", "DDMSolverBuilderAddingOverlap", "ras", "none"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive"),
+        (10, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive"),
+        (10, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive"),
+        (10, "S", "DDMSolverBuilder", "asm", "none"),
+        (10, "S", "DDMSolverBuilder", "ras", "none"),
+        (1, "S", "DDMSolverBuilder", "asm", "additive"),
+        (1, "S", "DDMSolverBuilder", "ras", "additive"),
+        (10, "S", "DDMSolverBuilder", "asm", "additive"),
+        (10, "S", "DDMSolverBuilder", "ras", "additive"),
     ],
     # indirect=["setup_solver_dependencies"],
 )
@@ -50,7 +63,7 @@ def test_ddm_solver(
     epsilon,
     eta,
     mu,
-    overlap,
+    ddm_builder,
     symmetry,
     tol,
     hpddm_schwarz_method,
@@ -69,6 +82,7 @@ def test_ddm_solver(
         A,
         x_ref,
         f,
+        geometry,
         cluster,
         neighbors,
         intersections,
@@ -90,21 +104,62 @@ def test_ddm_solver(
         UPLO,
         mpi4py.MPI.COMM_WORLD,
     )
-
+    # print("Geometry", geometry)
+    # fig = plt.figure()
+    # ax = fig.add_subplot(1, 1, 1, projection="3d")
+    # ax.scatter(geometry[0, :], geometry[1, :], geometry[2, :], marker="o")
+    # plt.show()
     solver = None
-    if not overlap:
+    if ddm_builder == "SolverBuilder":
         default_solver_builder = Htool.ComplexDefaultSolverBuilder(
             default_approximation.distributed_operator,
             default_approximation.block_diagonal_hmatrix,
         )
         solver = default_solver_builder.solver
-    else:
-        default_solver_builder = Htool.ComplexDefaultDDMSolverBuilder(
+    elif ddm_builder == "DDMSolverBuilderAddingOverlap":
+        default_solver_builder = Htool.ComplexDefaultDDMSolverBuilderAddingOverlap(
             default_approximation.distributed_operator,
             default_approximation.block_diagonal_hmatrix,
             generator,
             ovr_subdomain_to_global,
             cluster_to_ovr_subdomain,
+            neighbors,
+            intersections,
+        )
+        solver = default_solver_builder.solver
+    elif ddm_builder == "DDMSolverBuilder":
+        local_numbering_builder = Htool.LocalNumberingBuilder(
+            ovr_subdomain_to_global,
+            cluster_to_ovr_subdomain,
+            intersections,
+        )
+        intersections = local_numbering_builder.intersections
+        local_to_global_numbering = local_numbering_builder.local_to_global_numbering
+        local_geometry = geometry[:, local_to_global_numbering]
+
+        local_cluster_builder = Htool.ClusterBuilder()
+
+        local_cluster: Htool.Cluster = local_cluster_builder.create_cluster_tree(
+            local_geometry, 2, 2
+        )
+
+        local_hmatrix_builder = Htool.ComplexHMatrixBuilder(
+            local_cluster,
+            local_cluster,
+            epsilon,
+            eta,
+            symmetry,
+            UPLO,
+            -1,
+            -1,
+        )
+        local_generator = LocalGeneratorFromMatrix(
+            local_cluster.get_permutation(), local_to_global_numbering, A
+        )
+        local_hmatrix = local_hmatrix_builder.build(local_generator)
+        default_solver_builder = Htool.ComplexDefaultDDMSolverBuilder(
+            default_approximation.distributed_operator,
+            local_hmatrix,
             neighbors,
             intersections,
         )

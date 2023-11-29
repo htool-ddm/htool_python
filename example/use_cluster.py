@@ -1,10 +1,7 @@
 import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
-from create_geometry import (
-    create_partitionned_geometries_test,
-    create_random_geometries,
-)
+from create_geometry import create_random_geometries
 
 import Htool
 
@@ -57,7 +54,7 @@ if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
         ax2 = fig.add_subplot(1, 2, 2, projection="3d")
 
     ax1.set_title("target cluster\ndepth 2")
-    ax2.set_title("local cluster\ntarget partition number 0\ndepth 1")
-    Htool.plot(ax1, target_cluster, target_points, 1)
-    Htool.plot(ax2, local_target_cluster, target_points, 4)
+    ax2.set_title("local cluster\ntarget partition number 0\ndepth 2")
+    Htool.plot(ax1, target_cluster, target_points, 2)
+    Htool.plot(ax2, local_target_cluster, target_points, 2)
     plt.show()

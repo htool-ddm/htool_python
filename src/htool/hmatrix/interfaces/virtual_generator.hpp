@@ -50,8 +50,8 @@ class VirtualGeneratorWithPermutationPython : public htool::VirtualGeneratorWith
         if (M * N > 0) {
             py::array_t<CoefficientPrecision, py::array::f_style> mat(std::array<long int, 2>{M, N}, ptr, py::capsule(ptr));
 
-            py::array_t<int> py_rows(std::array<long int, 2>{M, 1}, rows, py::capsule(rows));
-            py::array_t<int> py_cols(std::array<long int, 2>{N, 1}, cols, py::capsule(cols));
+            py::array_t<int> py_rows(std::array<long int, 1>{M}, rows, py::capsule(rows));
+            py::array_t<int> py_cols(std::array<long int, 1>{N}, cols, py::capsule(cols));
 
             build_submatrix(py_rows, py_cols, mat);
         }

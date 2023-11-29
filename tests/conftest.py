@@ -31,6 +31,29 @@ class GeneratorFromMatrix(Htool.ComplexVirtualGeneratorWithPermutation):
                 mat[j, k] = self.get_coef(J[j], K[k])
 
 
+class LocalGeneratorFromMatrix(Htool.ComplexVirtualGeneratorWithPermutation):
+    def __init__(
+        self,
+        permutation,
+        local_to_global_numbering,
+        matrix,
+    ):
+        super().__init__(permutation, permutation)
+        self.matrix = matrix
+        self.local_to_global_numbering = local_to_global_numbering
+
+    def get_coef(self, i, j):
+        return self.matrix[i, j]
+
+    def build_submatrix(self, J, K, mat):
+        for j in range(0, len(J)):
+            for k in range(0, len(K)):
+                mat[j, k] = self.get_coef(
+                    self.local_to_global_numbering[J[j]],
+                    self.local_to_global_numbering[K[k]],
+                )
+
+
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
     if mpi4py.MPI.COMM_WORLD.Get_rank() != 0:
@@ -268,6 +291,15 @@ def load_data_solver(symmetry, mu):
         A = np.frombuffer(data[8:], dtype=np.dtype("complex128"))
         A = np.transpose(A.reshape((m, n)))
 
+    # Geometry
+    with open(
+        path_to_data / "geometry.bin",
+        "rb",
+    ) as input:
+        data = input.read()
+        geometry = np.frombuffer(data[4:], dtype=np.dtype("double"))
+        geometry = geometry.reshape(3, m, order="F")
+
     # Right-hand side
     with open(
         path_to_data / "rhs.bin",
@@ -348,6 +380,7 @@ def load_data_solver(symmetry, mu):
         A,
         x_ref,
         f,
+        geometry,
         cluster,
         neighbors,
         intersections,

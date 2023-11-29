@@ -49,7 +49,21 @@ void declare_matplotlib_cluster(py::module &m) {
 
         // Create Color Map
         py::object colormap = plt.attr("get_cmap")("Dark2");
-        py::object norm     = colors.attr("Normalize")("vmin"_a = (*std::min_element(partition_numbers.begin(), partition_numbers.end())), "vmax"_a = (*std::max_element(partition_numbers.begin(), partition_numbers.end())));
+        if (counter == 9) {
+            colormap = plt.attr("get_cmap")("Set1");
+        }
+        if (counter == 10) {
+            colormap = plt.attr("get_cmap")("tab10");
+        }
+        if (counter > 10 && counter <= 20) {
+            colormap = plt.attr("get_cmap")("tab20");
+        }
+        if (counter > 20) {
+            htool::Logger::get_instance()
+                .log(LogLevel::WARNING, "Colormap does not support more than 20 colors.");
+        }
+
+        py::object norm = colors.attr("Normalize")("vmin"_a = (*std::min_element(partition_numbers.begin(), partition_numbers.end())), "vmax"_a = (*std::max_element(partition_numbers.begin(), partition_numbers.end())));
 
         // Figure
         if (spatial_dimension == 2) {
