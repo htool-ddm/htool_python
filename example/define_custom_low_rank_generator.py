@@ -1,8 +1,7 @@
 import math
 
-import numpy as np
-
 import Htool
+import numpy as np
 
 
 class CustomSVD(Htool.VirtualLowRankGenerator):

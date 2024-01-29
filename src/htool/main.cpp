@@ -25,12 +25,17 @@
 #include "distributed_operator/implementation/partition_from_cluster.hpp"
 #include "distributed_operator/utility.hpp"
 
+#include "solver/geneo/coarse_operator_builder.hpp"
+#include "solver/geneo/coarse_space_builder.hpp"
+#include "solver/interfaces/virtual_coarse_operator_builder.hpp"
+#include "solver/interfaces/virtual_coarse_space_builder.hpp"
 #include "solver/solver.hpp"
 #include "solver/utility.hpp"
 
 #include "matplotlib/cluster.hpp"
 #include "matplotlib/hmatrix.hpp"
 #include "misc/logger.hpp"
+#include "misc/wrapper_mpi.hpp"
 // #include "ddm_solver.hpp"
 // #include "dense_blocks_generator.hpp"
 // #include "hmatrix.hpp"
@@ -39,7 +44,7 @@
 
 PYBIND11_MODULE(Htool, m) {
     // Delegate logging to python logging module
-    Logger::get_instance().set_current_writer(std::make_shared<PythonLoggerWriter>());
+    htool::Logger::get_instance().set_current_writer(std::make_shared<PythonLoggerWriter>());
 
     // import the mpi4py API
     if (import_mpi4py() < 0) {
@@ -72,6 +77,11 @@ PYBIND11_MODULE(Htool, m) {
     declare_distributed_operator_utility<double, double>(m);
 
     declare_DDM<double>(m, "Solver");
+    declare_virtual_coarse_space_builder<double>(m, "VirtualCoarseSpaceBuilder", "ICoarseSpaceBuilder");
+    declare_virtual_coarse_operator_builder<double>(m, "", "ICoarseOperatorBuilder");
+    declare_geneo_coarse_operator_builder<double>(m, "GeneoCoarseOperatorBuilder");
+    declare_geneo_coarse_space_dense_builder<double>(m, "GeneoCoarseSpaceDenseBuilder");
+    declare_virtual_geneo_coarse_space_dense_builder<double>(m, "VirtualGeneoCoarseSpaceDenseBuilder");
     declare_solver_utility(m);
     declare_solver_utility<double, double>(m);
 
@@ -86,5 +96,11 @@ PYBIND11_MODULE(Htool, m) {
     declare_distributed_operator_utility<std::complex<double>, double>(m, "Complex");
 
     declare_DDM<std::complex<double>>(m, "ComplexSolver");
+    declare_virtual_coarse_space_builder<std::complex<double>>(m, "ComplexVirtualCoarseSpaceBuilder", "IComplexCoarseSpaceBuilder");
+    declare_virtual_coarse_operator_builder<std::complex<double>>(m, "", "IComplexCoarseOperatorBuilder");
+    declare_geneo_coarse_operator_builder<std::complex<double>>(m, "ComplexGeneoCoarseOperatorBuilder");
+    declare_geneo_coarse_space_dense_builder<std::complex<double>>(m, "ComplexGeneoCoarseSpaceDenseBuilder");
+    declare_virtual_geneo_coarse_space_dense_builder<std::complex<double>>(m, "VirtualComplexGeneoCoarseSpaceDenseBuilder");
+
     declare_solver_utility<std::complex<double>, double>(m, "Complex");
 }

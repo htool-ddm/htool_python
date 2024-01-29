@@ -1,9 +1,8 @@
-import logging
 
 import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
-from create_geometry import create_partitionned_geometries, create_random_geometries
+from create_geometry import create_random_geometries
 from define_custom_generators import CustomGenerator
 from define_custom_local_operator import CustomLocalOperator
 

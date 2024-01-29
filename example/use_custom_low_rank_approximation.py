@@ -1,10 +1,9 @@
+import Htool
 import mpi4py
 import numpy as np
 from create_geometry import create_partitionned_geometries
 from define_custom_generators import CustomGenerator
 from define_custom_low_rank_generator import CustomSVD
-
-import Htool
 
 # Random geometry
 nb_rows = 500
@@ -52,8 +51,11 @@ hmatrix_builder = Htool.HMatrixBuilder(
     -1,
     mpi4py.MPI.COMM_WORLD.rank,
 )
-# hmatrix_builder.set_low_rank_generator(low_rank_generator)
+hmatrix_builder.set_low_rank_generator(low_rank_generator)
 hmatrix: Htool.HMatrix = hmatrix_builder.build(generator)
+del hmatrix_builder
+low_rank_generator.test()
+del low_rank_generator
 
 
 # Build local operator

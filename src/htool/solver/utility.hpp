@@ -34,10 +34,22 @@ void declare_solver_utility(py::module &m, std::string prefix = "") {
         "solver", [](const DefaultDDMSolverBuilderAddingOverlap &self) { return &self.solver; }, py::return_value_policy::reference_internal);
     default_ddm_solver_adding_overlap_class.def_property_readonly(
         "local_to_global_numbering", [](const DefaultDDMSolverBuilderAddingOverlap &self) { return &self.local_to_global_numbering; }, py::return_value_policy::reference_internal);
+    default_ddm_solver_adding_overlap_class.def_property_readonly(
+        "block_diagonal_dense_matrix", [](const DefaultDDMSolverBuilderAddingOverlap &self) {
+            py::array_t<CoefficientPrecision, py::array::f_style> mat({self.block_diagonal_dense_matrix.nb_cols(), self.block_diagonal_dense_matrix.nb_rows()}, self.block_diagonal_dense_matrix.data(), py::capsule(self.block_diagonal_dense_matrix.data()));
+            return mat;
+        },
+        py::return_value_policy::reference_internal);
 
     py::class_<DefaultDDMSolverBuilder> default_ddm_solver_class(m, default_ddm_solver_name.c_str());
     default_ddm_solver_class.def(py::init<DistributedOperator<CoefficientPrecision> &, const HMatrix<CoefficientPrecision, CoordinatePrecision> &, const std::vector<int> &, const std::vector<std::vector<int>> &>(), py::keep_alive<1, 2>(), py::keep_alive<1, 4>(), py::keep_alive<1, 5>());
     default_ddm_solver_class.def_property_readonly(
         "solver", [](const DefaultDDMSolverBuilder &self) { return &self.solver; }, py::return_value_policy::reference_internal);
+    default_ddm_solver_class.def_property_readonly(
+        "block_diagonal_dense_matrix", [](const DefaultDDMSolverBuilder &self) {
+            py::array_t<CoefficientPrecision, py::array::f_style> mat({self.block_diagonal_dense_matrix.nb_cols(), self.block_diagonal_dense_matrix.nb_rows()}, self.block_diagonal_dense_matrix.data(), py::capsule(self.block_diagonal_dense_matrix.data()));
+            return mat;
+        },
+        py::return_value_policy::reference_internal);
 }
 #endif

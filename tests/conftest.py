@@ -2,11 +2,11 @@ import os
 import pathlib
 import struct
 
+import Htool
 import mpi4py
 import numpy as np
 import pytest
 
-import Htool
 from example.define_custom_dense_blocks_generator import CustomDenseBlocksGenerator
 from example.define_custom_generators import CustomGenerator
 from example.define_custom_local_operator import CustomLocalOperator
@@ -375,7 +375,7 @@ def load_data_solver(symmetry, mu):
             (m, n) = struct.unpack("@II", data[:8])
             # print(m,n)
             local_neumann_matrix = np.frombuffer(data[8:], dtype=np.dtype("complex128"))
-            local_neumann_matrix = np.transpose(local_neumann_matrix.reshape((m, n)))
+            local_neumann_matrix = np.transpose(local_neumann_matrix.reshape((m, n),order='C')).copy("F")
     return [
         A,
         x_ref,

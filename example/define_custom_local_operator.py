@@ -1,7 +1,5 @@
-import mpi4py
-import numpy as np
-
 import Htool
+import numpy as np
 
 
 class CustomLocalOperator(Htool.LocalOperator):

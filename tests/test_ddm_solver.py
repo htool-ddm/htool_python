@@ -1,60 +1,162 @@
-import math
-import os
-import pathlib
-import struct
+import time
 
-import matplotlib.pyplot as plt
+import Htool
 import mpi4py
 import numpy as np
 import pytest
 from conftest import GeneratorFromMatrix, LocalGeneratorFromMatrix
-from mpi4py import MPI
+from scipy.linalg import eig, eigh
 
-import Htool
+
+class CustomGeneoCoarseSpaceDenseBuilder(
+    Htool.VirtualComplexGeneoCoarseSpaceDenseBuilder
+):
+    def compute_coarse_space(self, Ai, Bi):
+        coarse_space = None
+
+        if self.symmetry == "S" or self.symmetry == "H":
+            if self.geneo_threshold > 0:
+                [_, coarse_space] = eigh(
+                    Ai, Bi, subset_by_value=[self.geneo_threshold, np.inf]
+                )
+            else:
+                n = Ai.shape[0]
+                [_, coarse_space] = eigh(
+                    Ai, Bi, subset_by_index=[n - self.geneo_nu, n - 1]
+                )
+        else:
+            [w, v] = eig(Ai, Bi)
+            if self.geneo_threshold > 0:
+                nb_eig = (w > self.geneo_threshold).sum()
+                coarse_space = v[:, 0:nb_eig]
+            else:
+                coarse_space = v[:, 0 : self.geneo_nu]
+
+        self.set_coarse_space(coarse_space)
 
 
 @pytest.mark.parametrize("epsilon", [1e-6])
 @pytest.mark.parametrize("eta", [10])
 @pytest.mark.parametrize("tol", [1e-6])
 @pytest.mark.parametrize(
-    "mu,symmetry,ddm_builder,hpddm_schwarz_method,hpddm_schwarz_coarse_correction",
+    "mu,symmetry,ddm_builder,hpddm_schwarz_method,hpddm_schwarz_coarse_correction,geneo_type",
     [
-        (1, "N", "SolverBuilder", "none", "none"),
-        (1, "N", "SolverBuilder", "asm", "none"),
-        (1, "N", "SolverBuilder", "ras", "none"),
-        (1, "N", "DDMSolverBuilderAddingOverlap", "asm", "none"),
-        (1, "N", "DDMSolverBuilderAddingOverlap", "ras", "none"),
-        (1, "N", "DDMSolverBuilder", "asm", "none"),
-        (1, "N", "DDMSolverBuilder", "ras", "none"),
-        (10, "N", "SolverBuilder", "none", "none"),
-        (10, "N", "SolverBuilder", "asm", "none"),
-        (10, "N", "SolverBuilder", "ras", "none"),
-        (10, "N", "DDMSolverBuilderAddingOverlap", "asm", "none"),
-        (10, "N", "DDMSolverBuilderAddingOverlap", "ras", "none"),
-        (10, "N", "DDMSolverBuilder", "asm", "none"),
-        (10, "N", "DDMSolverBuilder", "ras", "none"),
-        (1, "S", "SolverBuilder", "none", "none"),
-        (1, "S", "SolverBuilder", "asm", "none"),
-        (1, "S", "SolverBuilder", "ras", "none"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "none"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "none"),
-        (1, "S", "DDMSolverBuilder", "asm", "none"),
-        (1, "S", "DDMSolverBuilder", "ras", "none"),
-        (10, "S", "SolverBuilder", "none", "none"),
-        (10, "S", "SolverBuilder", "asm", "none"),
-        (10, "S", "SolverBuilder", "ras", "none"),
-        (10, "S", "DDMSolverBuilderAddingOverlap", "asm", "none"),
-        (10, "S", "DDMSolverBuilderAddingOverlap", "ras", "none"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive"),
-        (10, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive"),
-        (10, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive"),
-        (10, "S", "DDMSolverBuilder", "asm", "none"),
-        (10, "S", "DDMSolverBuilder", "ras", "none"),
-        (1, "S", "DDMSolverBuilder", "asm", "additive"),
-        (1, "S", "DDMSolverBuilder", "ras", "additive"),
-        (10, "S", "DDMSolverBuilder", "asm", "additive"),
-        (10, "S", "DDMSolverBuilder", "ras", "additive"),
+        (1, "N", "SolverBuilder", "none", "none", "none"),
+        (1, "N", "SolverBuilder", "asm", "none", "none"),
+        (1, "N", "SolverBuilder", "ras", "none", "none"),
+        (1, "N", "DDMSolverBuilderAddingOverlap", "asm", "none", "none"),
+        (1, "N", "DDMSolverBuilderAddingOverlap", "ras", "none", "none"),
+        (1, "N", "DDMSolverBuilder", "asm", "none", "none"),
+        (1, "N", "DDMSolverBuilder", "ras", "none", "none"),
+        (10, "N", "SolverBuilder", "none", "none", "none"),
+        (10, "N", "SolverBuilder", "asm", "none", "none"),
+        (10, "N", "SolverBuilder", "ras", "none", "none"),
+        (10, "N", "DDMSolverBuilderAddingOverlap", "asm", "none", "none"),
+        (10, "N", "DDMSolverBuilderAddingOverlap", "ras", "none", "none"),
+        (10, "N", "DDMSolverBuilder", "asm", "none", "none"),
+        (10, "N", "DDMSolverBuilder", "ras", "none", "none"),
+        (1, "S", "SolverBuilder", "none", "none", "none"),
+        (1, "S", "SolverBuilder", "asm", "none", "none"),
+        (1, "S", "SolverBuilder", "ras", "none", "none"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "none", "none"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "none", "none"),
+        (1, "S", "DDMSolverBuilder", "asm", "none", "none"),
+        (1, "S", "DDMSolverBuilder", "ras", "none", "none"),
+        (10, "S", "SolverBuilder", "none", "none", "none"),
+        (10, "S", "SolverBuilder", "asm", "none", "none"),
+        (10, "S", "SolverBuilder", "ras", "none", "none"),
+        (10, "S", "DDMSolverBuilderAddingOverlap", "asm", "none", "none"),
+        (10, "S", "DDMSolverBuilderAddingOverlap", "ras", "none", "none"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive", "geneo_nu"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive", "geneo_nu"),
+        (10, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive", "geneo_nu"),
+        (10, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive", "geneo_nu"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive", "geneo_threshold"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive", "geneo_threshold"),
+        (
+            10,
+            "S",
+            "DDMSolverBuilderAddingOverlap",
+            "asm",
+            "additive",
+            "geneo_threshold",
+        ),
+        (
+            10,
+            "S",
+            "DDMSolverBuilderAddingOverlap",
+            "ras",
+            "additive",
+            "geneo_threshold",
+        ),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive", "custom_geneo_nu"),
+        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive", "custom_geneo_nu"),
+        (
+            10,
+            "S",
+            "DDMSolverBuilderAddingOverlap",
+            "asm",
+            "additive",
+            "custom_geneo_nu",
+        ),
+        (
+            10,
+            "S",
+            "DDMSolverBuilderAddingOverlap",
+            "ras",
+            "additive",
+            "custom_geneo_nu",
+        ),
+        (
+            1,
+            "S",
+            "DDMSolverBuilderAddingOverlap",
+            "asm",
+            "additive",
+            "custom_geneo_threshold",
+        ),
+        (
+            1,
+            "S",
+            "DDMSolverBuilderAddingOverlap",
+            "ras",
+            "additive",
+            "custom_geneo_threshold",
+        ),
+        (
+            10,
+            "S",
+            "DDMSolverBuilderAddingOverlap",
+            "asm",
+            "additive",
+            "custom_geneo_threshold",
+        ),
+        (
+            10,
+            "S",
+            "DDMSolverBuilderAddingOverlap",
+            "ras",
+            "additive",
+            "custom_geneo_threshold",
+        ),
+        (10, "S", "DDMSolverBuilder", "asm", "none", "none"),
+        (10, "S", "DDMSolverBuilder", "ras", "none", "none"),
+        (1, "S", "DDMSolverBuilder", "asm", "additive", "geneo_nu"),
+        (1, "S", "DDMSolverBuilder", "ras", "additive", "geneo_nu"),
+        (10, "S", "DDMSolverBuilder", "asm", "additive", "geneo_nu"),
+        (10, "S", "DDMSolverBuilder", "ras", "additive", "geneo_nu"),
+        (1, "S", "DDMSolverBuilder", "asm", "additive", "geneo_threshold"),
+        (1, "S", "DDMSolverBuilder", "ras", "additive", "geneo_threshold"),
+        (10, "S", "DDMSolverBuilder", "asm", "additive", "geneo_threshold"),
+        (10, "S", "DDMSolverBuilder", "ras", "additive", "geneo_threshold"),
+        (1, "S", "DDMSolverBuilder", "asm", "additive", "custom_geneo_nu"),
+        (1, "S", "DDMSolverBuilder", "ras", "additive", "custom_geneo_nu"),
+        (10, "S", "DDMSolverBuilder", "asm", "additive", "custom_geneo_nu"),
+        (10, "S", "DDMSolverBuilder", "ras", "additive", "custom_geneo_nu"),
+        (1, "S", "DDMSolverBuilder", "asm", "additive", "custom_geneo_threshold"),
+        (1, "S", "DDMSolverBuilder", "ras", "additive", "custom_geneo_threshold"),
+        (10, "S", "DDMSolverBuilder", "asm", "additive", "custom_geneo_threshold"),
+        (10, "S", "DDMSolverBuilder", "ras", "additive", "custom_geneo_threshold"),
     ],
     # indirect=["setup_solver_dependencies"],
 )
@@ -68,6 +170,7 @@ def test_ddm_solver(
     tol,
     hpddm_schwarz_method,
     hpddm_schwarz_coarse_correction,
+    geneo_type,
 ):
     # (
     #     solver,
@@ -104,18 +207,15 @@ def test_ddm_solver(
         UPLO,
         mpi4py.MPI.COMM_WORLD,
     )
-    # print("Geometry", geometry)
-    # fig = plt.figure()
-    # ax = fig.add_subplot(1, 1, 1, projection="3d")
-    # ax.scatter(geometry[0, :], geometry[1, :], geometry[2, :], marker="o")
-    # plt.show()
+
     solver = None
+    default_solver_builder = None
     if ddm_builder == "SolverBuilder":
         default_solver_builder = Htool.ComplexDefaultSolverBuilder(
             default_approximation.distributed_operator,
             default_approximation.block_diagonal_hmatrix,
         )
-        solver = default_solver_builder.solver
+
     elif ddm_builder == "DDMSolverBuilderAddingOverlap":
         default_solver_builder = Htool.ComplexDefaultDDMSolverBuilderAddingOverlap(
             default_approximation.distributed_operator,
@@ -126,7 +226,7 @@ def test_ddm_solver(
             neighbors,
             intersections,
         )
-        solver = default_solver_builder.solver
+
     elif ddm_builder == "DDMSolverBuilder":
         local_numbering_builder = Htool.LocalNumberingBuilder(
             ovr_subdomain_to_global,
@@ -163,8 +263,8 @@ def test_ddm_solver(
             neighbors,
             intersections,
         )
-        solver = default_solver_builder.solver
 
+    solver = default_solver_builder.solver
     distributed_operator = default_approximation.distributed_operator
 
     # Solver
@@ -192,7 +292,62 @@ def test_ddm_solver(
         solver.set_hpddm_args(
             "-hpddm_schwarz_coarse_correction " + hpddm_schwarz_coarse_correction
         )
-        solver.build_coarse_space(local_neumann_matrix)
+        # solver.build_coarse_space(local_neumann_matrix)
+        # print(default_solver_builder.block_diagonal_dense_matrix.flags)
+        # print(local_neumann_matrix.flags)
+        # geneo_space_operator_builder = (
+        #     Htool.ComplexGeneoCoarseSpaceDenseBuilder.GeneoWithNu(
+        #         cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
+        #         default_solver_builder.block_diagonal_dense_matrix,
+        #         local_neumann_matrix,
+        #         symmetry,
+        #         UPLO,
+        #         2,
+        #     )
+        # )
+        geneo_space_operator_builder = None
+        if geneo_type == "geneo_nu":
+            geneo_space_operator_builder = Htool.ComplexGeneoCoarseSpaceDenseBuilder(
+                cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
+                default_solver_builder.block_diagonal_dense_matrix,
+                local_neumann_matrix,
+                symmetry,
+                UPLO,
+                geneo_nu=2,
+            )
+        elif geneo_type == "geneo_threshold":
+            geneo_space_operator_builder = Htool.ComplexGeneoCoarseSpaceDenseBuilder(
+                cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
+                default_solver_builder.block_diagonal_dense_matrix,
+                local_neumann_matrix,
+                symmetry,
+                UPLO,
+                geneo_threshold=100,
+            )
+        elif geneo_type == "custom_geneo_nu":
+            geneo_space_operator_builder = CustomGeneoCoarseSpaceDenseBuilder(
+                cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
+                default_solver_builder.block_diagonal_dense_matrix,
+                local_neumann_matrix,
+                symmetry,
+                UPLO,
+                geneo_nu=2,
+            )
+        elif geneo_type == "custom_geneo_threshold":
+            geneo_space_operator_builder = Htool.ComplexGeneoCoarseSpaceDenseBuilder(
+                cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
+                default_solver_builder.block_diagonal_dense_matrix,
+                local_neumann_matrix,
+                symmetry,
+                UPLO,
+                geneo_threshold=100,
+            )
+        geneo_coarse_operator_builder = Htool.ComplexGeneoCoarseOperatorBuilder(
+            distributed_operator
+        )
+        solver.build_coarse_space(
+            geneo_space_operator_builder, geneo_coarse_operator_builder
+        )
 
     if hpddm_schwarz_method == "asm" or hpddm_schwarz_method == "ras":
         solver.facto_one_level()
@@ -213,180 +368,8 @@ def test_ddm_solver(
             distributed_operator @ x - f
         ) / np.linalg.norm(f)
         solution_error = np.linalg.norm(x[:, 1] - x_ref) / np.linalg.norm(x_ref)
-    # error = np.linalg.norm(distributed_operator * x - f)
-    # if mpi4py.MPI.COMM_WORLD.rank == 0:
-    #     print(
-    #         iterative_solver,
-    #         hpddm_schwarz_method,
-    #         hpddm_schwarz_coarse_correction,
-    #         epsilon,
-    #         solver.get_information("Nb_it"),
-    #         # error,
-    #         # np.linalg.norm(f),
-    #         # error / np.linalg.norm(f),
-    #         # hpddm_args,
-    #     )
-    # print(
-    #     np.linalg.norm(distributed_operator * x - f),
-    #     np.linalg.norm(f),
-    #     tol,
-    #     mpi4py.MPI.COMM_WORLD.rank,
-    # )
+
     if mpi4py.MPI.COMM_WORLD.rank == 0:
         print(solver.get_information())
     assert convergence_error < tol
     assert solution_error < epsilon * 10
-
-    # # DDM one level ASM wo overlap
-    # if rank == 0:
-    #     print("ASM one level without overlap:")
-    # comm.Barrier()
-    # block_jacobi.set_hpddm_args("-hpddm_schwarz_method asm")
-    # block_jacobi.facto_one_level()
-    # block_jacobi.solve(x, f)
-    # block_jacobi.print_infos()
-    # if mu == 1:
-    #     error = np.linalg.norm(hmat * x - f) / np.linalg.norm(f)
-    # elif mu > 1:
-    #     error = np.linalg.norm(hmat @ x - f) / np.linalg.norm(f)
-    # if rank == 0:
-    #     print(error)
-    # assert error < tol
-    # x.fill(0)
-
-    # # DDM one level ASM wo overlap
-    # if rank == 0:
-    #     print("RAS one level without overlap:")
-    # comm.Barrier()
-    # block_jacobi.set_hpddm_args("-hpddm_schwarz_method ras")
-    # block_jacobi.solve(x, f)
-    # block_jacobi.print_infos()
-    # if mu == 1:
-    #     error = np.linalg.norm(hmat * x - f) / np.linalg.norm(f)
-    # elif mu > 1:
-    #     error = np.linalg.norm(hmat @ x - f) / np.linalg.norm(f)
-    # if rank == 0:
-    #     print(error)
-    # assert error < tol
-    # x.fill(0)
-
-    # # Check infos
-    # if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
-    #     assert mpi4py.MPI.COMM_WORLD.Get_size() == int(
-    #         block_jacobi.get_infos("Nb_subdomains")
-    #     )
-
-    # # No precond with overlap
-    # if rank == 0:
-    #     print("No precond with overlap:")
-    # DDM_solver.solve(
-    #     x,
-    #     f,
-    #     hpddm_args="-hpddm_schwarz_method none -hpddm_max_it 200 -hpddm_tol "
-    #     + str(tol),
-    # )
-    # DDM_solver.print_infos()
-    # if mu == 1:
-    #     error = np.linalg.norm(hmat * x - f) / np.linalg.norm(f)
-    # elif mu > 1:
-    #     error = np.linalg.norm(hmat @ x - f) / np.linalg.norm(f)
-    # if rank == 0:
-    #     print(error)
-    # assert error < tol
-    # x.fill(0)
-
-    # # DDM one level ASM with overlap
-    # if rank == 0:
-    #     print("ASM one level with overlap:")
-    # comm.Barrier()
-    # DDM_solver.set_hpddm_args("-hpddm_schwarz_method asm")
-    # if Symmetry == "S" and size > 1:
-    #     # Matrix
-    #     with open(
-    #         os.path.join(
-    #             os.path.dirname(__file__)
-    #             + "/../lib/htool/data/data_test/"
-    #             + folder
-    #             + "/Ki_"
-    #             + str(size)
-    #             + "_"
-    #             + str(rank)
-    #             + ".bin"
-    #         ),
-    #         "rb",
-    #     ) as input:
-    #         data = input.read()
-    #         (m, n) = struct.unpack("@II", data[:8])
-    #         # print(m,n)
-    #         Ki = np.frombuffer(data[8:], dtype=np.dtype("complex128"))
-    #         Ki = np.transpose(Ki.reshape((m, n)))
-    #     DDM_solver.build_coarse_space(Ki)
-    # DDM_solver.facto_one_level()
-    # DDM_solver.solve(x, f)
-    # DDM_solver.print_infos()
-    # if mu == 1:
-    #     error = np.linalg.norm(hmat * x - f) / np.linalg.norm(f)
-    # elif mu > 1:
-    #     error = np.linalg.norm(hmat @ x - f) / np.linalg.norm(f)
-    # if rank == 0:
-    #     print(error)
-    # assert error < tol
-    # x.fill(0)
-
-    # # DDM one level RAS with overlap
-    # if rank == 0:
-    #     print("RAS one level with overlap:")
-    # comm.Barrier()
-    # DDM_solver.set_hpddm_args("-hpddm_schwarz_method ras")
-    # DDM_solver.solve(x, f)
-    # DDM_solver.print_infos()
-    # if mu == 1:
-    #     error = np.linalg.norm(hmat * x - f) / np.linalg.norm(f)
-    # elif mu > 1:
-    #     error = np.linalg.norm(hmat @ x - f) / np.linalg.norm(f)
-    # if rank == 0:
-    #     print(error)
-    # assert error < tol
-    # x.fill(0)
-
-    # # DDM two level ASM with overlap
-    # if Symmetry == "S" and size > 1:
-    #     if rank == 0:
-    #         print("ASM two level with overlap:")
-    #     comm.Barrier()
-    #     DDM_solver.set_hpddm_args(
-    #         "-hpddm_schwarz_method asm -hpddm_schwarz_coarse_correction additive"
-    #     )
-    #     DDM_solver.solve(x, f)
-    #     DDM_solver.print_infos()
-    #     if mu == 1:
-    #         error = np.linalg.norm(hmat * x - f) / np.linalg.norm(f)
-    #     elif mu > 1:
-    #         error = np.linalg.norm(hmat @ x - f) / np.linalg.norm(f)
-    #     if rank == 0:
-    #         print(error)
-    #     assert error < tol
-    #     x.fill(0)
-
-    #     if rank == 0:
-    #         print("RAS two level with overlap:")
-    #     comm.Barrier()
-    #     DDM_solver.set_hpddm_args(
-    #         "-hpddm_schwarz_method asm -hpddm_schwarz_coarse_correction additive"
-    #     )
-    #     DDM_solver.solve(x, f)
-    #     DDM_solver.print_infos()
-    #     if mu == 1:
-    #         error = np.linalg.norm(hmat * x - f) / np.linalg.norm(f)
-    #     elif mu > 1:
-    #         error = np.linalg.norm(hmat @ x - f) / np.linalg.norm(f)
-    #     if rank == 0:
-    #         print(error)
-    #     assert error < tol
-    #     x.fill(0)
-
-    # # Check infos
-    # if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
-    #     assert mpi4py.MPI.COMM_WORLD.Get_size() == int(
-    #         DDM_solver.get_infos("Nb_subdomains")
-    #     )

@@ -1,5 +1,3 @@
-import mpi4py
-
 import Htool
 
 

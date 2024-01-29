@@ -13,7 +13,6 @@ using namespace htool;
 
 template <typename CoefficientPrecision, typename CoordinatePrecision = CoefficientPrecision>
 class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<CoefficientPrecision, CoordinatePrecision> {
-
     int m_rank;
     mutable std::vector<py::array_t<CoefficientPrecision, py::array::f_style>> m_mats_U; // owned by Python
     mutable std::vector<py::array_t<CoefficientPrecision, py::array::f_style>> m_mats_V; // owned by Python
@@ -35,7 +34,9 @@ class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<Coefficient
     // lcov does not see it because of trampoline I assume
     virtual void build_low_rank_approximation(const VirtualGenerator<CoefficientPrecision> &A, int target_size, int source_size, int target_offset, int source_offset, underlying_type<CoefficientPrecision> epsilon) const = 0; // LCOV_EXCL_LINE
 
-    void set_U(py::array_t<CoefficientPrecision, py::array::f_style> U0) { m_mats_U.push_back(U0); }
+    void set_U(py::array_t<CoefficientPrecision, py::array::f_style> U0) {
+        m_mats_U.push_back(U0); // no copy here
+    }
     void set_V(py::array_t<CoefficientPrecision, py::array::f_style> V0) { m_mats_V.push_back(V0); }
     void set_rank(int rank) { m_rank = rank; }
 };
