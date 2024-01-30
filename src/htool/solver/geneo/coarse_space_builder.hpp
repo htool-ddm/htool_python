@@ -9,14 +9,14 @@ template <typename CoefficientPrecision, typename CoordinatePrecision = Coeffici
 class GeneoCoarseSpaceDenseBuilderPython : public GeneoCoarseSpaceDenseBuilder<CoefficientPrecision> {
     py::array_t<CoefficientPrecision, py::array::f_style> m_coarse_space;
 
-    using GeneoCoarseSpaceDenseBuilder<CoefficientPrecision>::GeneoCoarseSpaceDenseBuilder;
 
+    // using GeneoCoarseSpaceDenseBuilder<CoefficientPrecision>::GeneoCoarseSpaceDenseBuilder;
   public:
     char get_symmetry() { return this->m_symmetry; }
     int get_geneo_nu() { return this->m_geneo_nu; }
     htool::underlying_type<CoefficientPrecision> get_geneo_threshold() { return this->m_geneo_threshold; }
 
-    GeneoCoarseSpaceDenseBuilderPython(int size_wo_overlap, Matrix<CoefficientPrecision> Ai, Matrix<CoefficientPrecision> Bi, char symmetry, char uplo, int geneo_nu, htool::underlying_type<CoefficientPrecision> geneo_threshold) : GeneoCoarseSpaceDenseBuilder<CoefficientPrecision>(size_wo_overlap, Ai, Bi, symmetry, uplo, geneo_nu, geneo_threshold) {}
+    explicit GeneoCoarseSpaceDenseBuilderPython(int size_wo_overlap, Matrix<CoefficientPrecision> Ai, Matrix<CoefficientPrecision> Bi, char symmetry, char uplo, int geneo_nu, htool::underlying_type<CoefficientPrecision> geneo_threshold) : GeneoCoarseSpaceDenseBuilder<CoefficientPrecision>(size_wo_overlap, Ai, Bi, symmetry, uplo, geneo_nu, geneo_threshold) {}
 
     Matrix<CoefficientPrecision> build_coarse_space() override {
         py::array_t<CoefficientPrecision, py::array::f_style> Ai(std::array<long int, 2>{this->m_DAiD.nb_rows(), this->m_DAiD.nb_cols()}, this->m_DAiD.data(), py::capsule(this->m_DAiD.data()));
@@ -42,6 +42,8 @@ class PyGeneoCoarseSpaceDenseBuilder : public GeneoCoarseSpaceDenseBuilderPython
   public:
     /* Inherit the constructors */
     using GeneoCoarseSpaceDenseBuilderPython<CoefficientPrecision>::GeneoCoarseSpaceDenseBuilderPython;
+
+    // explicit PyGeneoCoarseSpaceDenseBuilder(int size_wo_overlap, Matrix<CoefficientPrecision> Ai, Matrix<CoefficientPrecision> Bi, char symmetry, char uplo, int geneo_nu, htool::underlying_type<CoefficientPrecision> geneo_threshold) : GeneoCoarseSpaceDenseBuilderPython<CoefficientPrecision>(size_wo_overlap, Ai, Bi, symmetry, uplo, geneo_nu, geneo_threshold) {}
 
     /* Trampoline (need one for each virtual function) */
     void compute_coarse_space(py::array_t<CoefficientPrecision, py::array::f_style> Ai, py::array_t<CoefficientPrecision, py::array::f_style> Bi) override {
