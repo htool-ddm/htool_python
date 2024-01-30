@@ -138,12 +138,12 @@ jobs:
           make
 
       - name: Run tests
-      run: |
-      export PYTHONPATH="$PWD/build"
-      mpirun -np 1 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
-      mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
-      mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
-      mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
+        run: |
+          export PYTHONPATH="$PWD/build"
+          mpirun -np 1 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
+          mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
+          mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
+          mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
 
       - name: Check format
         if: matrix.CODE_COVERAGE == 'ON'
