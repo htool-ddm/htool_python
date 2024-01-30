@@ -9,7 +9,6 @@ template <typename CoefficientPrecision, typename CoordinatePrecision = Coeffici
 class GeneoCoarseSpaceDenseBuilderPython : public GeneoCoarseSpaceDenseBuilder<CoefficientPrecision> {
     py::array_t<CoefficientPrecision, py::array::f_style> m_coarse_space;
 
-
     // using GeneoCoarseSpaceDenseBuilder<CoefficientPrecision>::GeneoCoarseSpaceDenseBuilder;
   public:
     char get_symmetry() { return this->m_symmetry; }
