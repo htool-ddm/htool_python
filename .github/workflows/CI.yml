@@ -132,6 +132,7 @@ jobs:
         run: |
           mkdir build && cd build
           pip3 install cmake numpy matplotlib
+          pip3 install .[dev] --user --verbose --no-build-isolation && pip3 uninstall htool
           CC=${{ matrix.CC_COMPILER }} CXX=${{ matrix.CXX_COMPILER }} cmake -DUSE_SANITIZER=${{ matrix.USE_SANITIZER }} -DCMAKE_BUILD_TYPE=${{ matrix.CMAKE_BUILD_TYPE }} -DCODE_COVERAGE=${{ matrix.CODE_COVERAGE }} ../
           make
 
