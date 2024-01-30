@@ -125,7 +125,7 @@ jobs:
         if: matrix.CODE_COVERAGE == 'OFF'
         run: |
           pip3 install cmake numpy matplotlib
-          pip3 install .[test] --user --verbose --no-build-isolation
+          pip3 install .[dev] --user --verbose --no-build-isolation
 
       - name: Build package in debug for coverage
         if: matrix.CODE_COVERAGE == 'ON'

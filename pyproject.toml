@@ -21,8 +21,7 @@ dependencies = ["mpi4py", "numpy"]
 
 
 [project.optional-dependencies]
-dev = ["black", "bumpver", "isort", "pytest"]
-test = ["matplotlib>=3.0.0", "pytest"]
+dev = ["ruff", "matplotlib>=3.0.0", "pytest"]
 
 
 [project.urls]
