@@ -125,14 +125,13 @@ jobs:
         if: matrix.CODE_COVERAGE == 'OFF'
         run: |
           pip3 install cmake numpy matplotlib
-          pip3 install .[dev] --user --verbose --no-build-isolation
+          pip3 install .[dev] --user --verbose
 
       - name: Build package in debug for coverage
         if: matrix.CODE_COVERAGE == 'ON'
         run: |
           mkdir build && cd build
-          pip3 install cmake numpy matplotlib
-          pip3 install .[dev] --user --verbose --no-build-isolation && pip3 uninstall htool
+          python3 -m pip install cmake numpy matplotlib ruff pytest mpi4py 
           CC=${{ matrix.CC_COMPILER }} CXX=${{ matrix.CXX_COMPILER }} cmake -DUSE_SANITIZER=${{ matrix.USE_SANITIZER }} -DCMAKE_BUILD_TYPE=${{ matrix.CMAKE_BUILD_TYPE }} -DCODE_COVERAGE=${{ matrix.CODE_COVERAGE }} ../
           make
 
@@ -156,7 +155,7 @@ jobs:
 
       - name: Check with ruff
         run: |
-          ruff .
+          ruff example/ tests/
 
       - name: Generate coverage reports
         if: matrix.CODE_COVERAGE == 'ON'
