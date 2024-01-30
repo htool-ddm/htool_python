@@ -153,18 +153,9 @@ jobs:
           make cmake-format
           git diff --exit-code
 
-      - name: Check module imports with isort
-        if: matrix.CODE_COVERAGE == 'ON'
+      - name: Check with ruff
         run: |
-          python3 -m pip install isort
-          python3 -m isort example --check-only --diff
-          python3 -m isort tests --check-only --diff
-
-      - name: Check formatting with black
-        if: matrix.CODE_COVERAGE == 'ON'
-        uses: psf/black@stable
-        with:
-          src: "./example ./tests"
+          ruff .
 
       - name: Generate coverage reports
         if: matrix.CODE_COVERAGE == 'ON'

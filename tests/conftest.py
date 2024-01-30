@@ -306,7 +306,7 @@ def load_data_solver(symmetry, mu):
         "rb",
     ) as input:
         data = input.read()
-        l = struct.unpack("@I", data[:4])
+        # l = struct.unpack("@I", data[:4])
         rhs = np.frombuffer(data[4:], dtype=np.dtype("complex128"))
     f = np.zeros(len(rhs), dtype="complex128")
     if mu > 1:
@@ -375,7 +375,9 @@ def load_data_solver(symmetry, mu):
             (m, n) = struct.unpack("@II", data[:8])
             # print(m,n)
             local_neumann_matrix = np.frombuffer(data[8:], dtype=np.dtype("complex128"))
-            local_neumann_matrix = np.transpose(local_neumann_matrix.reshape((m, n),order='C')).copy("F")
+            local_neumann_matrix = np.transpose(
+                local_neumann_matrix.reshape((m, n), order="C")
+            ).copy("F")
     return [
         A,
         x_ref,

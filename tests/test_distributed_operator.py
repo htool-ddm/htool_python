@@ -1,8 +1,5 @@
-import mpi4py
 import numpy as np
 import pytest
-
-import Htool
 
 
 @pytest.mark.parametrize("epsilon", [1e-3, 1e-6])

@@ -1,10 +1,9 @@
+import Htool
 import mpi4py
 import numpy as np
 from create_geometry import create_partitionned_geometries
 from define_custom_generators import CustomGenerator
 from define_custom_local_operator import CustomLocalOperator
-
-import Htool
 
 # Random geometry
 nb_rows = 500

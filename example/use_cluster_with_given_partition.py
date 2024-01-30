@@ -1,8 +1,7 @@
+import Htool
 import matplotlib.pyplot as plt
 import mpi4py
 from create_geometry import create_partitionned_geometries
-
-import Htool
 
 # Random geometry
 nb_rows = 500

@@ -1,10 +1,9 @@
+import Htool
 import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
 from create_geometry import create_partitionned_geometries
 from define_custom_generators import CustomGenerator
-
-import Htool
 
 # Random geometry
 size = 500

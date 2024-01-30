@@ -101,12 +101,16 @@ class CMakeBuild(build_ext):
 
         # Set CMAKE_BUILD_PARALLEL_LEVEL to control the parallel build level
         # across all generators.
-        if "CMAKE_BUILD_PARALLEL_LEVEL" not in os.environ:
+        if (
+            "CMAKE_BUILD_PARALLEL_LEVEL" not in os.environ
+            and hasattr(self, "parallel")
+            and self.parallel
+        ):
             # self.parallel is a Python 3 only way to set parallel jobs by hand
             # using -j in the build_ext call, not supported by pip or PyPA-build.
-            if hasattr(self, "parallel") and self.parallel:
-                # CMake 3.12+ only.
-                build_args += [f"-j{self.parallel}"]
+
+            # CMake 3.12+ only.
+            build_args += [f"-j{self.parallel}"]
 
         build_temp = Path(self.build_temp) / ext.name
         if not build_temp.exists():
@@ -161,7 +165,7 @@ setup(
     version="0.9.0",
     author="Pierre Marchand",
     author_email="",
-    description="A pybind11 interface to Htool, a header only c++ library that provides Hierarchical matrices.",
+    description="""A pybind11 interface to Htool.""",
     long_description="",
     ext_modules=[CMakeExtension("Htool")],
     cmdclass=dict(build_ext=CMakeBuild),

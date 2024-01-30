@@ -1,8 +1,7 @@
+import Htool
 import matplotlib.pyplot as plt
 import mpi4py
 import pytest
-
-import Htool
 
 
 @pytest.mark.parametrize(

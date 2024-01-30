@@ -29,7 +29,7 @@ class CustomLocalOperator(Htool.LocalOperator):
     def add_vector_product(
         self, trans, alpha, input: np.array, beta, output: np.array
     ) -> None:
-        # Beware, you need to use inplace operation for output to keep the underlying data
+        # Beware, inplace operation needed for output to keep the underlying data
         output *= beta
         if trans == "N":
             output += alpha * self.data.dot(input)

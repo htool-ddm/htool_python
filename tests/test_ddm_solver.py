@@ -1,5 +1,3 @@
-import time
-
 import Htool
 import mpi4py
 import numpy as np
@@ -292,19 +290,7 @@ def test_ddm_solver(
         solver.set_hpddm_args(
             "-hpddm_schwarz_coarse_correction " + hpddm_schwarz_coarse_correction
         )
-        # solver.build_coarse_space(local_neumann_matrix)
-        # print(default_solver_builder.block_diagonal_dense_matrix.flags)
-        # print(local_neumann_matrix.flags)
-        # geneo_space_operator_builder = (
-        #     Htool.ComplexGeneoCoarseSpaceDenseBuilder.GeneoWithNu(
-        #         cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
-        #         default_solver_builder.block_diagonal_dense_matrix,
-        #         local_neumann_matrix,
-        #         symmetry,
-        #         UPLO,
-        #         2,
-        #     )
-        # )
+
         geneo_space_operator_builder = None
         if geneo_type == "geneo_nu":
             geneo_space_operator_builder = Htool.ComplexGeneoCoarseSpaceDenseBuilder(
