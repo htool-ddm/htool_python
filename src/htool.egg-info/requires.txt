@@ -1,0 +1,11 @@
+mpi4py
+numpy
+
+[dev]
+black
+bumpver
+isort
+pytest
+
+[test]
+pytest
