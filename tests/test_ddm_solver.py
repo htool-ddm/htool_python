@@ -4,7 +4,7 @@ import Htool
 import mpi4py
 import numpy as np
 import pytest
-from conftest import GeneratorFromMatrix, LocalGeneratorFromMatrix
+from conftest import GeneratorFromMatrix
 from scipy.linalg import eig, eigh
 
 

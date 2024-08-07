@@ -121,19 +121,21 @@ jobs:
         with:
           submodules: "true"
 
+      - name: Activate virtualenv
+        run: |
+          . /usr/local/share/venv/bin/activate
+          echo PATH=$PATH >> $GITHUB_ENV
+
       - name: Build package in release
         if: matrix.CODE_COVERAGE == 'OFF'
         run: |
-          python3 -m pip install --upgrade pip        
-          python3 -m pip install cmake numpy matplotlib
-          python3 -m pip install .[dev] --verbose
+          python3 -m pip install .[dev]
 
       - name: Build package in debug for coverage
         if: matrix.CODE_COVERAGE == 'ON'
         run: |
           mkdir build && cd build
-          python3 -m pip install --upgrade pip           
-          python3 -m pip install cmake numpy matplotlib ruff pytest mpi4py 
+          python3 -m pip install numpy matplotlib ruff pytest mpi4py scipy 
           CC=${{ matrix.CC_COMPILER }} CXX=${{ matrix.CXX_COMPILER }} cmake -DUSE_SANITIZER=${{ matrix.USE_SANITIZER }} -DCMAKE_BUILD_TYPE=${{ matrix.CMAKE_BUILD_TYPE }} -DCODE_COVERAGE=${{ matrix.CODE_COVERAGE }} ../
           make
 
@@ -157,7 +159,7 @@ jobs:
 
       - name: Check with ruff
         run: |
-          ruff example/ tests/
+          ruff check example/ tests/
 
       - name: Generate coverage reports
         if: matrix.CODE_COVERAGE == 'ON'
