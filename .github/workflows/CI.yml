@@ -164,7 +164,7 @@ jobs:
       - name: Generate coverage reports
         if: matrix.CODE_COVERAGE == 'ON'
         run: |
-          lcov --capture --base-directory ./ --directory build/ --output-file coverage.info
+          lcov --ignore-errors mismatch --capture --base-directory ./ --directory build/ --output-file coverage.info
           lcov --remove  coverage.info '/usr/*' '*/hpddm/*' '*/pybind11/*' '*/lib/htool/*' --output-file  coverage.info
 
       - name: Upload coverage to Codecov
