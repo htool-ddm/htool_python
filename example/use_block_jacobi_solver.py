@@ -1,9 +1,11 @@
+import copy
+
 import Htool
 import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
 from create_geometry import create_random_geometries
-from define_custom_generators import CustomGeneratorWithPermutation
+from define_custom_generators import CustomGenerator
 
 # Random geometry
 size = 500
@@ -26,9 +28,7 @@ cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
 )
 
 # Build generator
-generator = CustomGeneratorWithPermutation(
-    cluster.get_permutation(), points, cluster.get_permutation(), points
-)
+generator = CustomGenerator(points, points)
 
 # Build distributed operator
 default_approximation = Htool.DefaultApproximationBuilder(
@@ -43,9 +43,10 @@ default_approximation = Htool.DefaultApproximationBuilder(
 )
 
 # Solver with block Jacobi preconditionner
-default_solver_builder = Htool.DefaultSolverBuilder(
-    default_approximation.distributed_operator,
-    default_approximation.block_diagonal_hmatrix,
+block_diagonal_hmatrix = copy.deepcopy(default_approximation.block_diagonal_hmatrix)
+test = default_approximation.block_diagonal_hmatrix
+default_solver_builder = Htool.DDMSolverBuilder(
+    default_approximation.distributed_operator, block_diagonal_hmatrix
 )
 solver = default_solver_builder.solver
 
@@ -64,18 +65,23 @@ solver.solve(x, b)
 
 
 # Several ways to display information
+hmatrix = default_approximation.hmatrix
+hmatrix_distributed_information = hmatrix.get_distributed_information(
+    mpi4py.MPI.COMM_WORLD
+)
+hmatrix_tree_parameter = hmatrix.get_tree_parameters()
+hmatrix_local_information = hmatrix.get_local_information()
+solver_information = solver.get_information()
 if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
     print(np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref))
     hmatrix = default_approximation.hmatrix
     local_block_hmatrix = default_approximation.block_diagonal_hmatrix
-    print(hmatrix.get_tree_parameters())
-    print(hmatrix.get_information())
+    print(hmatrix_distributed_information)
+    print(hmatrix_local_information)
+    print(hmatrix_tree_parameter)
+    print(solver_information)
 
     fig = plt.figure()
-    ax1 = None
-    ax2 = None
-    ax3 = None
-    ax4 = None
     if dimension == 2:
         ax1 = fig.add_subplot(2, 2, 1)
         ax2 = fig.add_subplot(2, 2, 2)
@@ -89,7 +95,8 @@ if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
 
     ax1.set_title("cluster at depth 1")
     ax2.set_title("cluster at depth 2")
-    ax4.set_title("Hmatrix on rank 0")
+    ax3.set_title("Hmatrix on rank 0")
+    ax4.set_title("Block diagonal Hmatrix on rank 0")
     Htool.plot(ax1, cluster, points, 1)
     Htool.plot(ax2, cluster, points, 2)
     Htool.plot(ax3, hmatrix)

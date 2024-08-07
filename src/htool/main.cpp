@@ -16,17 +16,15 @@
 #include "hmatrix/interfaces/virtual_generator.hpp"
 #include "hmatrix/interfaces/virtual_low_rank_generator.hpp"
 
-#include "local_operator/local_dense_operator.hpp"
-#include "local_operator/local_hmatrix.hpp"
 #include "local_operator/local_operator.hpp"
 #include "local_operator/virtual_local_operator.hpp"
 
 #include "distributed_operator/distributed_operator.hpp"
-#include "distributed_operator/implementation/partition_from_cluster.hpp"
 #include "distributed_operator/utility.hpp"
 
 #include "solver/geneo/coarse_operator_builder.hpp"
-#include "solver/geneo/coarse_space_builder.hpp"
+// #include "solver/geneo/coarse_space_builder.hpp"
+#include "solver/geneo/coarse_space_dense_builder.hpp"
 #include "solver/interfaces/virtual_coarse_operator_builder.hpp"
 #include "solver/interfaces/virtual_coarse_space_builder.hpp"
 #include "solver/solver.hpp"
@@ -36,11 +34,6 @@
 #include "matplotlib/hmatrix.hpp"
 #include "misc/logger.hpp"
 #include "misc/wrapper_mpi.hpp"
-// #include "ddm_solver.hpp"
-// #include "dense_blocks_generator.hpp"
-// #include "hmatrix.hpp"
-// #include "lrmat_generator.hpp"
-// #include "matrix.hpp"
 
 PYBIND11_MODULE(Htool, m) {
     // Delegate logging to python logging module
@@ -63,16 +56,11 @@ PYBIND11_MODULE(Htool, m) {
 
     declare_hmatrix_builder<double, double>(m, "HMatrixBuilder");
     declare_HMatrix<double, double>(m, "HMatrix");
-    declare_virtual_generator<double>(m, "VirtualGenerator", "IGenerator");
+    declare_virtual_generator<double>(m, "VirtualGeneratorInUserNumbering", "IGeneratorInUserNumbering");
     declare_custom_VirtualLowRankGenerator<double, double>(m, "VirtualLowRankGenerator");
     declare_custom_VirtualDenseBlocksGenerator<double>(m, "VirtualDenseBlocksGenerator");
 
     declare_local_operator<double, double>(m, "LocalOperator");
-    declare_local_hmatrix<double, double>(m, "LocalHMatrix");
-
-    declare_interface_partition<double>(m, "IPartition");
-    declare_partition_from_cluster<double, double>(m, "PartitionFromCluster");
-
     declare_distributed_operator<double>(m, "DistributedOperator");
     declare_distributed_operator_utility<double, double>(m);
 
@@ -82,7 +70,6 @@ PYBIND11_MODULE(Htool, m) {
     declare_geneo_coarse_operator_builder<double>(m, "GeneoCoarseOperatorBuilder");
     declare_geneo_coarse_space_dense_builder<double>(m, "GeneoCoarseSpaceDenseBuilder");
     declare_virtual_geneo_coarse_space_dense_builder<double>(m, "VirtualGeneoCoarseSpaceDenseBuilder");
-    declare_solver_utility(m);
     declare_solver_utility<double, double>(m);
 
     declare_matplotlib_cluster<double>(m);
@@ -90,7 +77,7 @@ PYBIND11_MODULE(Htool, m) {
 
     declare_hmatrix_builder<std::complex<double>, double>(m, "ComplexHMatrixBuilder");
     declare_HMatrix<std::complex<double>, double>(m, "ComplexHMatrix");
-    declare_virtual_generator<std::complex<double>>(m, "ComplexVirtualGenerator", "IComplexGenerator");
+    declare_virtual_generator<std::complex<double>>(m, "ComplexVirtualGeneratorInUserNumbering", "IComplexGeneratorInUserNumbering");
 
     declare_distributed_operator<std::complex<double>>(m, "ComplexDistributedOperator");
     declare_distributed_operator_utility<std::complex<double>, double>(m, "Complex");

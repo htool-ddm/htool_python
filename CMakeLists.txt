@@ -87,7 +87,7 @@ if("${BLA_VENDOR}" STREQUAL "Intel10_32"
     target_compile_definitions(htool PRIVATE "-DHPDDM_MKL -DHTOOL_MKL")
 endif()
 
-target_compile_definitions(Htool PRIVATE "-DPYTHON_INTERFACE" "-DWITH_HPDDM")
+target_compile_definitions(Htool PRIVATE "-DHTOOL_WITH_PYTHON_INTERFACE" "-DHTOOL_WITH_HPDDM")
 
 if(CODE_COVERAGE AND (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
     target_compile_options(Htool PRIVATE -fprofile-arcs -ftest-coverage)

@@ -14,16 +14,16 @@ class LocalOperatorPython : public htool::LocalOperator<CoefficientPrecision, Co
 
     void local_add_vector_product(char trans, CoefficientPrecision alpha, const CoefficientPrecision *in, CoefficientPrecision beta, CoefficientPrecision *out) const override {
 
-        py::array_t<CoefficientPrecision> input(this->m_source_cluster.get_size(), in, py::capsule(in));
-        py::array_t<CoefficientPrecision> output(this->m_target_cluster.get_size(), out, py::capsule(out));
+        py::array_t<CoefficientPrecision> input(std::array<long int, 1>{this->m_source_cluster.get_size()}, in, py::capsule(in));
+        py::array_t<CoefficientPrecision> output(std::array<long int, 1>{this->m_target_cluster.get_size()}, out, py::capsule(out));
 
         add_vector_product(trans, alpha, input, beta, output);
     }
 
     void local_add_vector_product_symmetric(char trans, CoefficientPrecision alpha, const CoefficientPrecision *in, CoefficientPrecision beta, CoefficientPrecision *out, char UPLO, char symmetry) const override {
 
-        py::array_t<CoefficientPrecision> input(this->m_source_cluster.get_size(), in, py::capsule(in));
-        py::array_t<CoefficientPrecision> output(this->m_target_cluster.get_size(), out, py::capsule(out));
+        py::array_t<CoefficientPrecision> input(std::array<long int, 1>{this->m_source_cluster.get_size()}, in, py::capsule(in));
+        py::array_t<CoefficientPrecision> output(std::array<long int, 1>{this->m_target_cluster.get_size()}, out, py::capsule(out));
 
         add_vector_product(trans, alpha, input, beta, output);
     }

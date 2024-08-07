@@ -53,9 +53,7 @@ for i in range(0, source_size):
     permuted_source_points[:, i] = source_points[:, source_permutation[i]]
 
 # Build generator
-generator = CustomGenerator(
-    target_cluster, target_points, source_cluster, source_points
-)
+generator = CustomGenerator(target_points, source_points)
 
 
 # Build distributed operator
@@ -90,12 +88,7 @@ off_diagonal_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
     permuted_source_points, number_of_children, 2, off_diagonal_partition
 )
 
-off_diagonal_generator = CustomGenerator(
-    target_cluster,
-    target_points,
-    off_diagonal_cluster,
-    permuted_source_points,
-)
+off_diagonal_generator = CustomGenerator(target_points, permuted_source_points)
 
 local_operator_1 = None
 if off_diagonal_nc_1 > 0:
@@ -154,10 +147,6 @@ if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
     print(hmatrix_tree_parameter)
 
     fig = plt.figure()
-    ax1 = None
-    ax2 = None
-    ax3 = None
-    ax4 = None
     if dimension == 2:
         ax1 = fig.add_subplot(2, 2, 1)
         ax2 = fig.add_subplot(2, 2, 2)
@@ -175,11 +164,12 @@ if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
     ax4.set_title("Hmatrix on rank 0")
     Htool.plot(ax1, source_cluster, source_points, 1)
     Htool.plot(ax2, source_cluster, source_points, 2)
-    Htool.plot(
-        ax3,
-        off_diagonal_cluster.get_cluster_on_partition(1),
-        permuted_source_points,
-        2,
-    )
+    if mpi4py.MPI.COMM_WORLD.Get_size() > 1:
+        Htool.plot(
+            ax3,
+            off_diagonal_cluster.get_cluster_on_partition(1),
+            permuted_source_points,
+            2,
+        )
     Htool.plot(ax4, hmatrix)
     plt.show()

@@ -13,13 +13,9 @@ from example.define_custom_local_operator import CustomLocalOperator
 from example.define_custom_low_rank_generator import CustomSVD
 
 
-class GeneratorFromMatrix(Htool.ComplexVirtualGeneratorWithPermutation):
-    def __init__(
-        self,
-        permutation,
-        matrix,
-    ):
-        super().__init__(permutation, permutation)
+class GeneratorFromMatrix(Htool.ComplexVirtualGeneratorInUserNumbering):
+    def __init__(self, matrix):
+        super().__init__()
         self.matrix = matrix
 
     def get_coef(self, i, j):
@@ -31,7 +27,7 @@ class GeneratorFromMatrix(Htool.ComplexVirtualGeneratorWithPermutation):
                 mat[j, k] = self.get_coef(J[j], K[k])
 
 
-class LocalGeneratorFromMatrix(Htool.ComplexVirtualGeneratorWithPermutation):
+class LocalGeneratorFromMatrix(Htool.ComplexVirtualGeneratorInUserNumbering):
     def __init__(
         self,
         permutation,
@@ -138,7 +134,7 @@ def cluster(geometry, symmetry):
 def generator(geometry, cluster):
     [target_points, source_points, _] = geometry
     [target_cluster, source_cluster] = cluster
-    return CustomGenerator(target_cluster, target_points, source_cluster, source_points)
+    return CustomGenerator(target_points, source_points)
 
 
 @pytest.fixture(
@@ -172,7 +168,7 @@ def local_operator(request, generator, cluster, geometry):
 )
 def low_rank_approximation(request, generator, cluster, epsilon):
     if request.param:
-        return CustomSVD()
+        return CustomSVD(generator)
     else:
         return None
 
@@ -209,26 +205,17 @@ def custom_distributed_operator(
 ):
     [target_cluster, source_cluster] = cluster
 
-    # Build distributed operator
-    target_partition_from_cluster = Htool.PartitionFromCluster(target_cluster)
-    source_partition_from_cluster = Htool.PartitionFromCluster(source_cluster)
-    distributed_operator = Htool.DistributedOperator(
-        target_partition_from_cluster,
-        source_partition_from_cluster,
-        symmetry,
-        UPLO,
-        mpi4py.MPI.COMM_WORLD,
-    )
-
-    local_hmatrix = None
-    hmatrix = None
     if local_operator is not None:
-        distributed_operator.add_local_operator(local_operator)
-    else:
-        local_target_cluster = target_cluster.get_cluster_on_partition(
-            mpi4py.MPI.COMM_WORLD.rank
+        custom_local_approximation = Htool.CustomApproximationBuilder(
+            target_cluster,
+            source_cluster,
+            symmetry,
+            UPLO,
+            mpi4py.MPI.COMM_WORLD,
+            local_operator,
         )
-
+        distributed_operator = custom_local_approximation.distributed_operator
+    else:
         hmatrix_builder = Htool.HMatrixBuilder(
             target_cluster,
             source_cluster,
@@ -238,24 +225,20 @@ def custom_distributed_operator(
             UPLO,
             -1,
             mpi4py.MPI.COMM_WORLD.rank,
+            mpi4py.MPI.COMM_WORLD.rank,
         )
         if dense_blocks_generator is not None:
             hmatrix_builder.set_dense_blocks_generator(dense_blocks_generator)
         if low_rank_approximation is not None:
             hmatrix_builder.set_low_rank_generator(low_rank_approximation)
 
-        hmatrix: Htool.HMatrix = hmatrix_builder.build(generator)
-
-        local_hmatrix = Htool.LocalHMatrix(
-            hmatrix,
-            local_target_cluster,
+        distributed_operator = Htool.DistributedOperatorFromHMatrix(
+            generator,
+            target_cluster,
             source_cluster,
-            symmetry,
-            UPLO,
-            False,
-            False,
+            hmatrix_builder,
+            mpi4py.MPI.COMM_WORLD,
         )
-        distributed_operator.add_local_operator(local_hmatrix)
 
     return distributed_operator
 

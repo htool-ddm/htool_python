@@ -32,9 +32,7 @@ source_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
 
 
 # Build generator
-generator = CustomGenerator(
-    target_cluster, target_points, source_cluster, source_points
-)
+generator = CustomGenerator(target_points, source_points)
 
 # Build local operator
 local_operator = CustomLocalOperator(
@@ -44,22 +42,14 @@ local_operator = CustomLocalOperator(
     "N",
     "N",
     False,
-    False,
+    True,
 )
 
 # Build distributed operator
-target_partition_from_cluster = Htool.PartitionFromCluster(target_cluster)
-source_partition_from_cluster = Htool.PartitionFromCluster(source_cluster)
-distributed_operator = Htool.DistributedOperator(
-    target_partition_from_cluster,
-    source_partition_from_cluster,
-    "N",
-    "N",
-    mpi4py.MPI.COMM_WORLD,
+custom_local_approximation = Htool.CustomApproximationBuilder(
+    target_cluster, source_cluster, "N", "N", mpi4py.MPI.COMM_WORLD, local_operator
 )
-
-distributed_operator.add_local_operator(local_operator)
-
+distributed_operator = custom_local_approximation.distributed_operator
 
 # Test matrix vector product
 np.random.seed(0)

@@ -1,3 +1,5 @@
+import copy
+
 import Htool
 import mpi4py
 import numpy as np
@@ -11,25 +13,21 @@ class CustomGeneoCoarseSpaceDenseBuilder(
 ):
     def compute_coarse_space(self, Ai, Bi):
         coarse_space = None
-
         if self.symmetry == "S" or self.symmetry == "H":
             if self.geneo_threshold > 0:
-                [_, coarse_space] = eigh(
-                    Ai, Bi, subset_by_value=[self.geneo_threshold, np.inf]
-                )
+                [w, v] = eigh(Ai, Bi, driver="gv")
             else:
-                n = Ai.shape[0]
-                [_, coarse_space] = eigh(
-                    Ai, Bi, subset_by_index=[n - self.geneo_nu, n - 1]
-                )
+                [w, v] = eigh(Ai, Bi, driver="gv")
         else:
             [w, v] = eig(Ai, Bi)
-            if self.geneo_threshold > 0:
-                nb_eig = (w > self.geneo_threshold).sum()
-                coarse_space = v[:, 0:nb_eig]
-            else:
-                coarse_space = v[:, 0 : self.geneo_nu]
 
+        idx = w.argsort()[::-1]
+
+        if self.geneo_threshold > 0:
+            nb_eig = (w > self.geneo_threshold).sum()
+            coarse_space = v[:, idx[0:nb_eig]]
+        else:
+            coarse_space = v[:, idx[0 : self.geneo_nu]]
         self.set_coarse_space(coarse_space)
 
 
@@ -39,42 +37,42 @@ class CustomGeneoCoarseSpaceDenseBuilder(
 @pytest.mark.parametrize(
     "mu,symmetry,ddm_builder,hpddm_schwarz_method,hpddm_schwarz_coarse_correction,geneo_type",
     [
-        (1, "N", "SolverBuilder", "none", "none", "none"),
-        (1, "N", "SolverBuilder", "asm", "none", "none"),
-        (1, "N", "SolverBuilder", "ras", "none", "none"),
-        (1, "N", "DDMSolverBuilderAddingOverlap", "asm", "none", "none"),
-        (1, "N", "DDMSolverBuilderAddingOverlap", "ras", "none", "none"),
-        (1, "N", "DDMSolverBuilder", "asm", "none", "none"),
-        (1, "N", "DDMSolverBuilder", "ras", "none", "none"),
-        (10, "N", "SolverBuilder", "none", "none", "none"),
-        (10, "N", "SolverBuilder", "asm", "none", "none"),
-        (10, "N", "SolverBuilder", "ras", "none", "none"),
-        (10, "N", "DDMSolverBuilderAddingOverlap", "asm", "none", "none"),
-        (10, "N", "DDMSolverBuilderAddingOverlap", "ras", "none", "none"),
-        (10, "N", "DDMSolverBuilder", "asm", "none", "none"),
-        (10, "N", "DDMSolverBuilder", "ras", "none", "none"),
-        (1, "S", "SolverBuilder", "none", "none", "none"),
-        (1, "S", "SolverBuilder", "asm", "none", "none"),
-        (1, "S", "SolverBuilder", "ras", "none", "none"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "none", "none"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "none", "none"),
-        (1, "S", "DDMSolverBuilder", "asm", "none", "none"),
-        (1, "S", "DDMSolverBuilder", "ras", "none", "none"),
-        (10, "S", "SolverBuilder", "none", "none", "none"),
-        (10, "S", "SolverBuilder", "asm", "none", "none"),
-        (10, "S", "SolverBuilder", "ras", "none", "none"),
-        (10, "S", "DDMSolverBuilderAddingOverlap", "asm", "none", "none"),
-        (10, "S", "DDMSolverBuilderAddingOverlap", "ras", "none", "none"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive", "geneo_nu"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive", "geneo_nu"),
-        (10, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive", "geneo_nu"),
-        (10, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive", "geneo_nu"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive", "geneo_threshold"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive", "geneo_threshold"),
+        (1, "N", "BlockJacobi", "none", "none", "none"),
+        (1, "N", "BlockJacobi", "asm", "none", "none"),
+        (1, "N", "BlockJacobi", "ras", "none", "none"),
+        (1, "N", "DDMWithHMatrixPlusOverlap", "asm", "none", "none"),
+        (1, "N", "DDMWithHMatrixPlusOverlap", "ras", "none", "none"),
+        (1, "N", "DDMWithHMatrix", "asm", "none", "none"),
+        (1, "N", "DDMWithHMatrix", "ras", "none", "none"),
+        (10, "N", "BlockJacobi", "none", "none", "none"),
+        (10, "N", "BlockJacobi", "asm", "none", "none"),
+        (10, "N", "BlockJacobi", "ras", "none", "none"),
+        (10, "N", "DDMWithHMatrixPlusOverlap", "asm", "none", "none"),
+        (10, "N", "DDMWithHMatrixPlusOverlap", "ras", "none", "none"),
+        (10, "N", "DDMWithHMatrix", "asm", "none", "none"),
+        (10, "N", "DDMWithHMatrix", "ras", "none", "none"),
+        (1, "S", "BlockJacobi", "none", "none", "none"),
+        (1, "S", "BlockJacobi", "asm", "none", "none"),
+        (1, "S", "BlockJacobi", "ras", "none", "none"),
+        (1, "S", "DDMWithHMatrixPlusOverlap", "asm", "none", "none"),
+        (1, "S", "DDMWithHMatrixPlusOverlap", "ras", "none", "none"),
+        (1, "S", "DDMWithHMatrix", "asm", "none", "none"),
+        (1, "S", "DDMWithHMatrix", "ras", "none", "none"),
+        (10, "S", "BlockJacobi", "none", "none", "none"),
+        (10, "S", "BlockJacobi", "asm", "none", "none"),
+        (10, "S", "BlockJacobi", "ras", "none", "none"),
+        (10, "S", "DDMWithHMatrixPlusOverlap", "asm", "none", "none"),
+        (10, "S", "DDMWithHMatrixPlusOverlap", "ras", "none", "none"),
+        (1, "S", "DDMWithHMatrixPlusOverlap", "asm", "additive", "geneo_nu"),
+        (1, "S", "DDMWithHMatrixPlusOverlap", "ras", "additive", "geneo_nu"),
+        (10, "S", "DDMWithHMatrixPlusOverlap", "asm", "additive", "geneo_nu"),
+        (10, "S", "DDMWithHMatrixPlusOverlap", "ras", "additive", "geneo_nu"),
+        (1, "S", "DDMWithHMatrixPlusOverlap", "asm", "additive", "geneo_threshold"),
+        (1, "S", "DDMWithHMatrixPlusOverlap", "ras", "additive", "geneo_threshold"),
         (
             10,
             "S",
-            "DDMSolverBuilderAddingOverlap",
+            "DDMWithHMatrixPlusOverlap",
             "asm",
             "additive",
             "geneo_threshold",
@@ -82,17 +80,17 @@ class CustomGeneoCoarseSpaceDenseBuilder(
         (
             10,
             "S",
-            "DDMSolverBuilderAddingOverlap",
+            "DDMWithHMatrixPlusOverlap",
             "ras",
             "additive",
             "geneo_threshold",
         ),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "asm", "additive", "custom_geneo_nu"),
-        (1, "S", "DDMSolverBuilderAddingOverlap", "ras", "additive", "custom_geneo_nu"),
+        (1, "S", "DDMWithHMatrixPlusOverlap", "asm", "additive", "custom_geneo_nu"),
+        (1, "S", "DDMWithHMatrixPlusOverlap", "ras", "additive", "custom_geneo_nu"),
         (
             10,
             "S",
-            "DDMSolverBuilderAddingOverlap",
+            "DDMWithHMatrixPlusOverlap",
             "asm",
             "additive",
             "custom_geneo_nu",
@@ -100,7 +98,7 @@ class CustomGeneoCoarseSpaceDenseBuilder(
         (
             10,
             "S",
-            "DDMSolverBuilderAddingOverlap",
+            "DDMWithHMatrixPlusOverlap",
             "ras",
             "additive",
             "custom_geneo_nu",
@@ -108,7 +106,7 @@ class CustomGeneoCoarseSpaceDenseBuilder(
         (
             1,
             "S",
-            "DDMSolverBuilderAddingOverlap",
+            "DDMWithHMatrixPlusOverlap",
             "asm",
             "additive",
             "custom_geneo_threshold",
@@ -116,7 +114,7 @@ class CustomGeneoCoarseSpaceDenseBuilder(
         (
             1,
             "S",
-            "DDMSolverBuilderAddingOverlap",
+            "DDMWithHMatrixPlusOverlap",
             "ras",
             "additive",
             "custom_geneo_threshold",
@@ -124,7 +122,7 @@ class CustomGeneoCoarseSpaceDenseBuilder(
         (
             10,
             "S",
-            "DDMSolverBuilderAddingOverlap",
+            "DDMWithHMatrixPlusOverlap",
             "asm",
             "additive",
             "custom_geneo_threshold",
@@ -132,29 +130,29 @@ class CustomGeneoCoarseSpaceDenseBuilder(
         (
             10,
             "S",
-            "DDMSolverBuilderAddingOverlap",
+            "DDMWithHMatrixPlusOverlap",
             "ras",
             "additive",
             "custom_geneo_threshold",
         ),
-        (10, "S", "DDMSolverBuilder", "asm", "none", "none"),
-        (10, "S", "DDMSolverBuilder", "ras", "none", "none"),
-        (1, "S", "DDMSolverBuilder", "asm", "additive", "geneo_nu"),
-        (1, "S", "DDMSolverBuilder", "ras", "additive", "geneo_nu"),
-        (10, "S", "DDMSolverBuilder", "asm", "additive", "geneo_nu"),
-        (10, "S", "DDMSolverBuilder", "ras", "additive", "geneo_nu"),
-        (1, "S", "DDMSolverBuilder", "asm", "additive", "geneo_threshold"),
-        (1, "S", "DDMSolverBuilder", "ras", "additive", "geneo_threshold"),
-        (10, "S", "DDMSolverBuilder", "asm", "additive", "geneo_threshold"),
-        (10, "S", "DDMSolverBuilder", "ras", "additive", "geneo_threshold"),
-        (1, "S", "DDMSolverBuilder", "asm", "additive", "custom_geneo_nu"),
-        (1, "S", "DDMSolverBuilder", "ras", "additive", "custom_geneo_nu"),
-        (10, "S", "DDMSolverBuilder", "asm", "additive", "custom_geneo_nu"),
-        (10, "S", "DDMSolverBuilder", "ras", "additive", "custom_geneo_nu"),
-        (1, "S", "DDMSolverBuilder", "asm", "additive", "custom_geneo_threshold"),
-        (1, "S", "DDMSolverBuilder", "ras", "additive", "custom_geneo_threshold"),
-        (10, "S", "DDMSolverBuilder", "asm", "additive", "custom_geneo_threshold"),
-        (10, "S", "DDMSolverBuilder", "ras", "additive", "custom_geneo_threshold"),
+        (10, "S", "DDMWithHMatrix", "asm", "none", "none"),
+        (10, "S", "DDMWithHMatrix", "ras", "none", "none"),
+        (1, "S", "DDMWithHMatrix", "asm", "additive", "geneo_nu"),
+        (1, "S", "DDMWithHMatrix", "ras", "additive", "geneo_nu"),
+        (10, "S", "DDMWithHMatrix", "asm", "additive", "geneo_nu"),
+        (10, "S", "DDMWithHMatrix", "ras", "additive", "geneo_nu"),
+        (1, "S", "DDMWithHMatrix", "asm", "additive", "geneo_threshold"),
+        (1, "S", "DDMWithHMatrix", "ras", "additive", "geneo_threshold"),
+        (10, "S", "DDMWithHMatrix", "asm", "additive", "geneo_threshold"),
+        (10, "S", "DDMWithHMatrix", "ras", "additive", "geneo_threshold"),
+        (1, "S", "DDMWithHMatrix", "asm", "additive", "custom_geneo_nu"),
+        (1, "S", "DDMWithHMatrix", "ras", "additive", "custom_geneo_nu"),
+        (10, "S", "DDMWithHMatrix", "asm", "additive", "custom_geneo_nu"),
+        (10, "S", "DDMWithHMatrix", "ras", "additive", "custom_geneo_nu"),
+        (1, "S", "DDMWithHMatrix", "asm", "additive", "custom_geneo_threshold"),
+        (1, "S", "DDMWithHMatrix", "ras", "additive", "custom_geneo_threshold"),
+        (10, "S", "DDMWithHMatrix", "asm", "additive", "custom_geneo_threshold"),
+        (10, "S", "DDMWithHMatrix", "ras", "additive", "custom_geneo_threshold"),
     ],
     # indirect=["setup_solver_dependencies"],
 )
@@ -194,7 +192,7 @@ def test_ddm_solver(
         local_neumann_matrix,
     ] = load_data_solver
 
-    generator = GeneratorFromMatrix(cluster.get_permutation(), A)
+    generator = GeneratorFromMatrix(A)
     default_approximation = Htool.ComplexDefaultApproximationBuilder(
         generator,
         cluster,
@@ -208,16 +206,22 @@ def test_ddm_solver(
 
     solver = None
     default_solver_builder = None
-    if ddm_builder == "SolverBuilder":
-        default_solver_builder = Htool.ComplexDefaultSolverBuilder(
+    if ddm_builder == "BlockJacobi":
+        block_diagonal_hmatrix = copy.deepcopy(
+            default_approximation.block_diagonal_hmatrix
+        )
+        default_solver_builder = Htool.ComplexDDMSolverBuilder(
             default_approximation.distributed_operator,
-            default_approximation.block_diagonal_hmatrix,
+            block_diagonal_hmatrix,
         )
 
-    elif ddm_builder == "DDMSolverBuilderAddingOverlap":
-        default_solver_builder = Htool.ComplexDefaultDDMSolverBuilderAddingOverlap(
+    elif ddm_builder == "DDMWithHMatrixPlusOverlap":
+        block_diagonal_hmatrix = copy.deepcopy(
+            default_approximation.block_diagonal_hmatrix
+        )
+        default_solver_builder = Htool.ComplexDDMSolverBuilder(
             default_approximation.distributed_operator,
-            default_approximation.block_diagonal_hmatrix,
+            block_diagonal_hmatrix,
             generator,
             ovr_subdomain_to_global,
             cluster_to_ovr_subdomain,
@@ -225,45 +229,23 @@ def test_ddm_solver(
             intersections,
         )
 
-    elif ddm_builder == "DDMSolverBuilder":
-        local_numbering_builder = Htool.LocalNumberingBuilder(
+    elif ddm_builder == "DDMWithHMatrix":
+        default_solver_builder = Htool.ComplexDDMSolverBuilder(
+            default_approximation.distributed_operator,
             ovr_subdomain_to_global,
             cluster_to_ovr_subdomain,
-            intersections,
-        )
-        intersections = local_numbering_builder.intersections
-        local_to_global_numbering = local_numbering_builder.local_to_global_numbering
-        local_geometry = geometry[:, local_to_global_numbering]
-
-        local_cluster_builder = Htool.ClusterBuilder()
-
-        local_cluster: Htool.Cluster = local_cluster_builder.create_cluster_tree(
-            local_geometry, 2, 2
-        )
-
-        local_hmatrix_builder = Htool.ComplexHMatrixBuilder(
-            local_cluster,
-            local_cluster,
-            epsilon,
-            eta,
-            symmetry,
-            UPLO,
-            -1,
-            -1,
-        )
-        local_generator = LocalGeneratorFromMatrix(
-            local_cluster.get_permutation(), local_to_global_numbering, A
-        )
-        local_hmatrix = local_hmatrix_builder.build(local_generator)
-        default_solver_builder = Htool.ComplexDefaultDDMSolverBuilder(
-            default_approximation.distributed_operator,
-            local_hmatrix,
             neighbors,
             intersections,
+            generator,
+            geometry,
+            epsilon,
+            eta,
         )
 
     solver = default_solver_builder.solver
     distributed_operator = default_approximation.distributed_operator
+    local_size_wo_overlap = len(cluster_to_ovr_subdomain)
+    local_size_with_overlap = len(ovr_subdomain_to_global)
 
     # Solver
     x = np.zeros(len(f), dtype="complex128", order="F")
@@ -287,15 +269,12 @@ def test_ddm_solver(
     solver.set_hpddm_args(hpddm_args)
 
     if hpddm_schwarz_coarse_correction != "none" and mpi4py.MPI.COMM_WORLD.size > 1:
-        solver.set_hpddm_args(
-            "-hpddm_schwarz_coarse_correction " + hpddm_schwarz_coarse_correction
-        )
-
         geneo_space_operator_builder = None
         if geneo_type == "geneo_nu":
             geneo_space_operator_builder = Htool.ComplexGeneoCoarseSpaceDenseBuilder(
-                cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
-                default_solver_builder.block_diagonal_dense_matrix,
+                local_size_wo_overlap,
+                local_size_with_overlap,
+                default_approximation.block_diagonal_hmatrix,
                 local_neumann_matrix,
                 symmetry,
                 UPLO,
@@ -303,8 +282,9 @@ def test_ddm_solver(
             )
         elif geneo_type == "geneo_threshold":
             geneo_space_operator_builder = Htool.ComplexGeneoCoarseSpaceDenseBuilder(
-                cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
-                default_solver_builder.block_diagonal_dense_matrix,
+                local_size_wo_overlap,
+                local_size_with_overlap,
+                default_approximation.block_diagonal_hmatrix,
                 local_neumann_matrix,
                 symmetry,
                 UPLO,
@@ -312,17 +292,19 @@ def test_ddm_solver(
             )
         elif geneo_type == "custom_geneo_nu":
             geneo_space_operator_builder = CustomGeneoCoarseSpaceDenseBuilder(
-                cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
-                default_solver_builder.block_diagonal_dense_matrix,
+                local_size_wo_overlap,
+                local_size_with_overlap,
+                default_approximation.block_diagonal_hmatrix.to_dense(),
                 local_neumann_matrix,
                 symmetry,
                 UPLO,
                 geneo_nu=2,
             )
         elif geneo_type == "custom_geneo_threshold":
-            geneo_space_operator_builder = Htool.ComplexGeneoCoarseSpaceDenseBuilder(
-                cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank).get_size(),
-                default_solver_builder.block_diagonal_dense_matrix,
+            geneo_space_operator_builder = CustomGeneoCoarseSpaceDenseBuilder(
+                local_size_wo_overlap,
+                local_size_with_overlap,
+                default_approximation.block_diagonal_hmatrix.to_dense(),
                 local_neumann_matrix,
                 symmetry,
                 UPLO,
@@ -333,6 +315,10 @@ def test_ddm_solver(
         )
         solver.build_coarse_space(
             geneo_space_operator_builder, geneo_coarse_operator_builder
+        )
+
+        solver.set_hpddm_args(
+            "-hpddm_schwarz_coarse_correction " + hpddm_schwarz_coarse_correction
         )
 
     if hpddm_schwarz_method == "asm" or hpddm_schwarz_method == "ras":

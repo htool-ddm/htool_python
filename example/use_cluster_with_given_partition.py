@@ -31,8 +31,6 @@ local_target_cluster: Htool.Cluster = target_cluster.get_cluster_on_partition(
 
 if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
     fig = plt.figure()
-    ax1 = None
-    ax2 = None
 
     if dimension == 2:
         ax1 = fig.add_subplot(1, 2, 1)

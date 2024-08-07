@@ -16,7 +16,7 @@ inline pybind11::array_t<typename Sequence::value_type> as_pyarray(Sequence &&se
     std::unique_ptr<Sequence> seq_ptr = std::make_unique<Sequence>(std::move(seq));
     auto capsule                      = pybind11::capsule(seq_ptr.get(), [](void *p) { std::unique_ptr<Sequence>(reinterpret_cast<Sequence *>(p)); });
     seq_ptr.release();
-    return pybind11::array(size, data, capsule);
+    return pybind11::array({size}, {sizeof(typename Sequence::value_type)}, data, capsule);
 }
 
 #endif

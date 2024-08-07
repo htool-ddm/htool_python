@@ -20,21 +20,6 @@ void declare_cluster_node(py::module &m, const std::string &className) {
     py_class.def("get_offset", &Class::get_offset);
     py_class.def("get_permutation", [](const Class &self) {
         auto &permutation = self.get_permutation();
-        // int rankWorld;
-        // MPI_Comm_rank(MPI_COMM_WORLD, &rankWorld);
-        // if (rankWorld == 0) {
-        //     for (auto &elt : permutation) {
-        //         std::cout << elt << " ";
-        //     }
-        //     std::cout << "\n";
-        // }
-        // MPI_Barrier(MPI_COMM_WORLD);
-        // if (rankWorld == 1) {
-        //     for (auto &elt : permutation) {
-        //         std::cout << elt << " ";
-        //     }
-        //     std::cout << "\n";
-        // }
         return py::array_t<int>(std::array<std::size_t, 1>{permutation.size()}, permutation.data(), py::capsule(permutation.data()));
         ;
     });

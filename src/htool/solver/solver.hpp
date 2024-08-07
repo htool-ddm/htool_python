@@ -12,26 +12,9 @@ using namespace htool;
 template <typename CoefficientPrecision>
 void declare_DDM(py::module &m, const std::string &className) {
 
-    using Class = DDM<CoefficientPrecision>;
+    using Class = DDM<CoefficientPrecision, HPDDMCustomLocalSolver>;
     py::class_<Class> py_class(m, className.c_str());
-    py_class.def(py::init<
-                 const DistributedOperator<CoefficientPrecision> &,
-                 Matrix<CoefficientPrecision> &,
-                 const std::vector<int> &,
-                 const std::vector<std::vector<int>> &>());
     py_class.def("facto_one_level", &Class::facto_one_level);
-    // py_class.def("build_coarse_space", [](Class &self, py::array_t<CoefficientPrecision, py::array::f_style> Ki) {
-    //     if (Ki.ndim() != 2) {
-    //         throw std::invalid_argument("Wrong dimension for local matrix when building coarse space\n"); // LCOV_EXCL_LINE
-    //     }
-    //     if (Ki.shape()[0] != self.get_local_size() && Ki.shape()[1] != self.get_local_size()) {
-    //         throw std::invalid_argument("Wrong size for local matrix when building coarse space: (" + std::to_string(Ki.shape()[0]) + "," + std::to_string(Ki.shape()[1]) + ") vs (" + std::to_string(self.get_local_size()) + "," + std::to_string(self.get_local_size()) + ")\n"); // LCOV_EXCL_LINE
-    //     }
-
-    //     Matrix<CoefficientPrecision> Ki_mat(Ki.shape()[0], Ki.shape()[1]);
-    //     std::copy_n(Ki.data(), Ki.shape()[0] * Ki.shape()[1], Ki_mat.data());
-    //     self.build_coarse_space(Ki_mat);
-    // });
     py_class.def("build_coarse_space", py::overload_cast<VirtualCoarseSpaceBuilder<CoefficientPrecision> &, VirtualCoarseOperatorBuilder<CoefficientPrecision> &>(&Class::build_coarse_space));
     py_class.def(
         "solve", [](Class &self, py::array_t<CoefficientPrecision, py::array::f_style> x, const py::array_t<CoefficientPrecision, py::array::f_style | py::array::forcecast> b, std::string hpddm_args) {

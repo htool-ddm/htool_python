@@ -32,13 +32,11 @@ source_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
 
 
 # Build generator
-generator = CustomGenerator(
-    target_cluster, target_points, source_cluster, source_points
-)
+generator = CustomGenerator(target_points, source_points)
 
 # Low rank generator
 
-low_rank_generator = CustomSVD()
+low_rank_generator = CustomSVD(generator)
 
 # Build HMatrix
 hmatrix_builder = Htool.HMatrixBuilder(
@@ -50,37 +48,16 @@ hmatrix_builder = Htool.HMatrixBuilder(
     "N",
     -1,
     mpi4py.MPI.COMM_WORLD.rank,
+    mpi4py.MPI.COMM_WORLD.rank,
 )
 hmatrix_builder.set_low_rank_generator(low_rank_generator)
-hmatrix: Htool.HMatrix = hmatrix_builder.build(generator)
-del hmatrix_builder
-low_rank_generator.test()
-del low_rank_generator
-
-
-# Build local operator
-local_operator = Htool.LocalHMatrix(
-    hmatrix,
-    target_cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank),
-    source_cluster,
-    "N",
-    "N",
-    False,
-    False,
-)
 
 # Build distributed operator
-target_partition_from_cluster = Htool.PartitionFromCluster(target_cluster)
-source_partition_from_cluster = Htool.PartitionFromCluster(source_cluster)
-distributed_operator = Htool.DistributedOperator(
-    target_partition_from_cluster,
-    source_partition_from_cluster,
-    "N",
-    "N",
-    mpi4py.MPI.COMM_WORLD,
+distributed_operator_from_hmatrix = Htool.DistributedOperatorFromHMatrix(
+    generator, target_cluster, source_cluster, hmatrix_builder, mpi4py.MPI.COMM_WORLD
 )
 
-distributed_operator.add_local_operator(local_operator)
+distributed_operator = distributed_operator_from_hmatrix.distributed_operator
 
 
 # Test matrix vector product

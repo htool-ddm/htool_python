@@ -5,7 +5,7 @@ import numpy as np
 class CustomLocalOperator(Htool.LocalOperator):
     def __init__(
         self,
-        generator: Htool.VirtualGenerator,
+        generator: Htool.VirtualGeneratorInUserNumbering,
         target_cluster: Htool.Cluster,
         source_cluster: Htool.Cluster,
         symmetry: str = "N",
@@ -23,7 +23,15 @@ class CustomLocalOperator(Htool.LocalOperator):
         )
         self.data = np.zeros((target_cluster.get_size(), source_cluster.get_size()))
         generator.build_submatrix(
-            target_cluster.get_offset(), source_cluster.get_offset(), self.data
+            target_cluster.get_permutation()[
+                target_cluster.get_offset() : target_cluster.get_offset()
+                + target_cluster.get_size()
+            ],
+            source_cluster.get_permutation()[
+                source_cluster.get_offset() : source_cluster.get_offset()
+                + source_cluster.get_size()
+            ],
+            self.data,
         )
 
     def add_vector_product(

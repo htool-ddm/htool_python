@@ -32,49 +32,21 @@ source_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
 
 
 # Build generator
-generator = CustomGenerator(
-    target_cluster, target_points, source_cluster, source_points
-)
+generator = CustomGenerator(target_points, source_points)
 
-# Build HMatrix
-hmatrix_builder = Htool.HMatrixBuilder(
+# Build distributed operator
+default_approximation = Htool.DefaultApproximationBuilder(
+    generator,
     target_cluster,
     source_cluster,
     epsilon,
     eta,
     "N",
     "N",
-    -1,
-    mpi4py.MPI.COMM_WORLD.rank,
-)
-
-hmatrix: Htool.HMatrix = hmatrix_builder.build(generator)
-
-
-# Build local operator
-local_operator = Htool.LocalHMatrix(
-    hmatrix,
-    target_cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank),
-    source_cluster,
-    "N",
-    "N",
-    False,
-    False,
-)
-
-# Build distributed operator
-target_partition_from_cluster = Htool.PartitionFromCluster(target_cluster)
-source_partition_from_cluster = Htool.PartitionFromCluster(source_cluster)
-distributed_operator = Htool.DistributedOperator(
-    target_partition_from_cluster,
-    source_partition_from_cluster,
-    "N",
-    "N",
     mpi4py.MPI.COMM_WORLD,
 )
 
-distributed_operator.add_local_operator(local_operator)
-
+distributed_operator = default_approximation.distributed_operator
 
 # Test matrix vector product
 np.random.seed(0)
@@ -90,8 +62,8 @@ Y_1 = distributed_operator @ X
 Y_2 = generator.mat_mat(X)
 print(mpi4py.MPI.COMM_WORLD.rank, np.linalg.norm(Y_1 - Y_2) / np.linalg.norm(Y_2))
 
-
-# Outputs
+# Several ways to display information
+hmatrix = default_approximation.hmatrix
 hmatrix_distributed_information = hmatrix.get_distributed_information(
     mpi4py.MPI.COMM_WORLD
 )
@@ -101,11 +73,9 @@ if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
     print(hmatrix_distributed_information)
     print(hmatrix_local_information)
     print(hmatrix_tree_parameter)
+
     fig = plt.figure()
-    ax1 = None
-    ax2 = None
-    ax3 = None
-    ax4 = None
+
     if dimension == 2:
         ax1 = fig.add_subplot(2, 2, 1)
         ax2 = fig.add_subplot(2, 2, 2)

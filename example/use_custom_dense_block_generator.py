@@ -32,9 +32,7 @@ source_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
 
 
 # Build generator
-generator = CustomGenerator(
-    target_cluster, target_points, source_cluster, source_points
-)
+generator = CustomGenerator(target_points, source_points)
 
 #
 custom_dense_blocks_generator = CustomDenseBlocksGenerator(generator)
