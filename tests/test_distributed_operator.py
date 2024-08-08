@@ -1,3 +1,6 @@
+import Htool
+import matplotlib.pyplot as plt
+import mpi4py
 import numpy as np
 import pytest
 
@@ -41,7 +44,21 @@ def test_distributed_operator(
         default_distributed_operator_holder = default_distributed_operator
         distributed_operator = default_distributed_operator_holder.distributed_operator
         local_hmatrix = default_distributed_operator_holder.hmatrix
-        print(local_hmatrix.get_local_information())
+
+        hmatrix_distributed_information = local_hmatrix.get_distributed_information(
+            mpi4py.MPI.COMM_WORLD
+        )
+        hmatrix_tree_parameter = local_hmatrix.get_tree_parameters()
+        hmatrix_local_information = local_hmatrix.get_local_information()
+        if mpi4py.MPI.COMM_WORLD.rank == 0:
+            print(hmatrix_distributed_information)
+            print(hmatrix_local_information)
+            print(hmatrix_tree_parameter)
+
+        fig = plt.figure()
+        ax1 = fig.add_subplot(1, 1, 1)
+        Htool.plot(ax1, local_hmatrix)
+
     else:
         distributed_operator = custom_distributed_operator
 
