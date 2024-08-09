@@ -141,9 +141,10 @@ def generator(geometry, cluster):
     params=[True, False],
     ids=["custom_dense_block_generator", "auto_dense_block_generator"],
 )
-def dense_blocks_generator(request, generator):
+def dense_blocks_generator(request, generator, cluster):
+    [target_cluster, source_cluster] = cluster
     if request.param:
-        return CustomDenseBlocksGenerator(generator)
+        return CustomDenseBlocksGenerator(generator, target_cluster, source_cluster)
     else:
         return None
 
@@ -206,7 +207,7 @@ def custom_distributed_operator(
     [target_cluster, source_cluster] = cluster
 
     if local_operator is not None:
-        custom_local_approximation = Htool.CustomApproximationBuilder(
+        distributed_operator_holder = Htool.CustomApproximationBuilder(
             target_cluster,
             source_cluster,
             symmetry,
@@ -214,7 +215,6 @@ def custom_distributed_operator(
             mpi4py.MPI.COMM_WORLD,
             local_operator,
         )
-        distributed_operator = custom_local_approximation.distributed_operator
     else:
         hmatrix_builder = Htool.HMatrixBuilder(
             target_cluster,
@@ -232,7 +232,7 @@ def custom_distributed_operator(
         if low_rank_approximation is not None:
             hmatrix_builder.set_low_rank_generator(low_rank_approximation)
 
-        distributed_operator = Htool.DistributedOperatorFromHMatrix(
+        distributed_operator_holder = Htool.DistributedOperatorFromHMatrix(
             generator,
             target_cluster,
             source_cluster,
@@ -240,7 +240,7 @@ def custom_distributed_operator(
             mpi4py.MPI.COMM_WORLD,
         )
 
-    return distributed_operator
+    return distributed_operator_holder
 
 
 @pytest.fixture()

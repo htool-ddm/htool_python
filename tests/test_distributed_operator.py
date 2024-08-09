@@ -21,10 +21,14 @@ import pytest
         (400, 400, "S", "U", True, False, False, False, False),
         (400, 400, "N", "N", True, False, False, False, False),
         (400, 200, "N", "N", True, False, False, False, False),
-        (400, 400, "S", "L", False, True, True, True, False),
-        (400, 400, "S", "U", False, True, True, True, False),
-        (400, 400, "N", "N", False, True, True, True, False),
-        (400, 200, "N", "N", False, True, True, True, False),
+        (400, 400, "S", "L", False, True, True, False, False),
+        (400, 400, "S", "U", False, True, True, False, False),
+        (400, 400, "N", "N", False, True, True, False, False),
+        (400, 200, "N", "N", False, True, True, False, False),
+        (400, 400, "S", "L", False, False, False, True, False),
+        (400, 400, "S", "U", False, False, False, True, False),
+        (400, 400, "N", "N", False, False, False, True, False),
+        (400, 200, "N", "N", False, False, False, True, False),
         (400, 200, "N", "N", True, False, False, False, True),
     ],
     indirect=["low_rank_approximation", "dense_blocks_generator", "local_operator"],
@@ -58,9 +62,11 @@ def test_distributed_operator(
         fig = plt.figure()
         ax1 = fig.add_subplot(1, 1, 1)
         Htool.plot(ax1, local_hmatrix)
+        plt.close(fig)
 
     else:
-        distributed_operator = custom_distributed_operator
+        distributed_operator_holder = custom_distributed_operator
+        distributed_operator = distributed_operator_holder.distributed_operator
 
     # Test matrix vector product
     np.random.seed(0)
