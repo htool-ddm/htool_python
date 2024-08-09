@@ -67,27 +67,27 @@ void declare_geneo_coarse_space_dense_builder(py::module &m, const std::string &
                      Bi_mat.assign(Bi.shape()[0], Bi.shape()[1], Bi.mutable_data(), false);
                      return Class::GeneoWithNu(size_wo_overlap, size_with_overlap, Ai, Bi_mat, symmetry, uplo, geneo_nu);
                  }),
-                 py::arg("size_wo_overlap"),
+                 py::arg("size_wo_overlap"), // LCOV_EXCL_START
                  py::arg("size_with_overlap"),
                  py::arg("Ai"),
                  py::arg("Bi"),
                  py::arg("symmetry"),
                  py::arg("uplo"),
                  py::kw_only(),
-                 py::arg("geneo_nu"));
+                 py::arg("geneo_nu")); // LCOV_EXCL_STOP
     py_class.def(py::init([](int size_wo_overlap, int size_with_overlap, const HMatrix<CoefficientPrecision, underlying_type<CoefficientPrecision>> &Ai, py::array_t<CoefficientPrecision, py::array::f_style> Bi, char symmetry, char uplo, double geneo_threshold) {
                      Matrix<CoefficientPrecision> Bi_mat;
                      Bi_mat.assign(Bi.shape()[0], Bi.shape()[1], Bi.mutable_data(), false);
                      return Class::GeneoWithThreshold(size_wo_overlap, size_with_overlap, Ai, Bi_mat, symmetry, uplo, geneo_threshold);
                  }),
-                 py::arg("size_wo_overlap"),
+                 py::arg("size_wo_overlap"), // LCOV_EXCL_START
                  py::arg("size_with_overlap"),
                  py::arg("Ai"),
                  py::arg("Bi"),
                  py::arg("symmetry"),
                  py::arg("uplo"),
                  py::kw_only(),
-                 py::arg("geneo_threshold"));
+                 py::arg("geneo_threshold")); // LCOV_EXCL_STOP
 }
 
 template <typename CoefficientPrecision>
@@ -102,14 +102,14 @@ void declare_virtual_geneo_coarse_space_dense_builder(py::module &m, const std::
                      Bi_mat.assign(Bi.shape()[0], Bi.shape()[1], Bi.mutable_data(), false);
                      return PyGeneoCoarseSpaceDenseBuilder<CoefficientPrecision>(size_wo_overlap, size_with_overlap, Ai_mat, Bi_mat, symmetry, uplo, geneo_nu, -1);
                  }),
-                 py::arg("size_wo_overlap"),
+                 py::arg("size_wo_overlap"), // LCOV_EXCL_START
                  py::arg("size_with_overlap"),
                  py::arg("Ai"),
                  py::arg("Bi"),
                  py::arg("symmetry"),
                  py::arg("uplo"),
                  py::kw_only(),
-                 py::arg("geneo_nu"));
+                 py::arg("geneo_nu")); // LCOV_EXCL_STOP
     py_class.def(py::init([](int size_wo_overlap, int size_with_overlap, py::array_t<CoefficientPrecision, py::array::f_style> Ai, py::array_t<CoefficientPrecision, py::array::f_style> Bi, char symmetry, char uplo, double geneo_threshold) {
                      Matrix<CoefficientPrecision> Ai_mat;
                      Ai_mat.assign(Ai.shape()[0], Ai.shape()[1], Ai.mutable_data(), false);
@@ -117,14 +117,14 @@ void declare_virtual_geneo_coarse_space_dense_builder(py::module &m, const std::
                      Bi_mat.assign(Bi.shape()[0], Bi.shape()[1], Bi.mutable_data(), false);
                      return PyGeneoCoarseSpaceDenseBuilder<CoefficientPrecision>(size_wo_overlap, size_with_overlap, Ai_mat, Bi_mat, symmetry, uplo, 0, geneo_threshold);
                  }),
-                 py::arg("size_wo_overlap"),
+                 py::arg("size_wo_overlap"), // LCOV_EXCL_START
                  py::arg("size_with_overlap"),
                  py::arg("Ai"),
                  py::arg("Bi"),
                  py::arg("symmetry"),
                  py::arg("uplo"),
                  py::kw_only(),
-                 py::arg("geneo_threshold"));
+                 py::arg("geneo_threshold")); // LCOV_EXCL_STOP
     py_class.def("set_coarse_space", &Class::set_coarse_space);
     py_class.def_property_readonly("symmetry", &Class::get_symmetry);
     py_class.def_property_readonly("geneo_nu", &Class::get_geneo_nu);

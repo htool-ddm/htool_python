@@ -47,12 +47,6 @@ void declare_DDM(py::module &m, const std::string &className) {
                 throw std::invalid_argument("Wrong dimension for right-hand side or solution\nright-hand side: " + rhs + "\n" + "solution: " + sol + "\n");
                 // LCOV_EXCL_STOP
             }
-            // if (b.shape()[0] != self.get_nb_cols()) {
-            //     throw std::invalid_argument("Wrong size for right-hand side"); // LCOV_EXCL_LINE
-            // }
-            // if (x.shape()[0] != self.get_nb_rows()) {
-            //     throw std::invalid_argument("Wrong size for solution"); // LCOV_EXCL_LINE
-            // }
 
             self.solve(b.data(), x.mutable_data(), mu);
         },
