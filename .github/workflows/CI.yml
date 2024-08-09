@@ -165,10 +165,27 @@ jobs:
         if: matrix.CODE_COVERAGE == 'ON'
         run: |
           lcov --ignore-errors mismatch --capture --base-directory ./ --directory build/ --output-file coverage.info
-          lcov --remove  coverage.info '/usr/*' '*/hpddm/*' '*/pybind11/*' '*/lib/htool/*' --output-file  coverage.info
+          lcov --remove  coverage.info '/usr/*' '*/hpddm/*' '*/pybind11/*' '*/lib/htool/*' --output-file  ../coverage.info
 
-      - name: Upload coverage to Codecov
-        if: matrix.CODE_COVERAGE == 'ON'
-        uses: codecov/codecov-action@v2
+      - uses: actions/upload-artifact@v4
         with:
-          file: coverage.info
+          path: coverage.info
+          if-no-files-found: error
+        if: matrix.CODE_COVERAGE == 'ON'
+
+  coverage:
+    runs-on: ubuntu-latest
+    if: ${{ success() }}
+    needs: [ linux ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          file: ./coverage.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
