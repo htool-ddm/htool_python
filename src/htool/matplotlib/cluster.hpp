@@ -15,12 +15,10 @@ void declare_matplotlib_cluster(py::module &m) {
 
         // Runtime checks
         if (spatial_dimension == 3 && ax.attr("name").cast<std::string>() != "3d") {
-            htool::Logger::get_instance()
-                .log(LogLevel::WARNING, "Axes object is not 3d while coordinates are 3d.");
+            htool::Logger::get_instance().log(LogLevel::WARNING, "Axes object is not 3d while coordinates are 3d."); // LCOV_EXCL_LINE
         }
         if (spatial_dimension == 2 && ax.attr("name").cast<std::string>() != "rectilinear") {
-            htool::Logger::get_instance()
-                .log(LogLevel::WARNING, "Axes object is not rectilinear while coordinates are 2d.");
+            htool::Logger::get_instance().log(LogLevel::WARNING, "Axes object is not rectilinear while coordinates are 2d."); // LCOV_EXCL_LINE
         }
 
         std::vector<double> output((spatial_dimension)*root_cluster_size);
@@ -59,8 +57,7 @@ void declare_matplotlib_cluster(py::module &m) {
             colormap = plt.attr("get_cmap")("tab20");
         }
         if (counter > 20) {
-            htool::Logger::get_instance()
-                .log(LogLevel::WARNING, "Colormap does not support more than 20 colors.");
+            htool::Logger::get_instance().log(LogLevel::WARNING, "Colormap does not support more than 20 colors."); // LCOV_EXCL_LINE
         }
 
         py::object norm = colors.attr("Normalize")("vmin"_a = (*std::min_element(partition_numbers.begin(), partition_numbers.end())), "vmax"_a = (*std::max_element(partition_numbers.begin(), partition_numbers.end())));

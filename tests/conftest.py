@@ -7,13 +7,18 @@ import mpi4py
 import numpy as np
 import pytest
 
-from example.define_custom_dense_blocks_generator import CustomDenseBlocksGenerator
-from example.define_custom_generators import CustomGenerator
-from example.define_custom_local_operator import CustomLocalOperator
-from example.define_custom_low_rank_generator import CustomSVD
+from example.advanced.define_custom_dense_blocks_generator import (
+    CustomDenseBlocksGenerator,
+)
+from example.advanced.define_custom_local_operator import (
+    CustomLocalToLocalOperator,
+    CustomRestrictedGlobalToLocalOperator,
+)
+from example.advanced.define_custom_low_rank_generator import CustomSVD
+from example.define_generators import CustomGenerator
 
 
-class GeneratorFromMatrix(Htool.ComplexVirtualGeneratorInUserNumbering):
+class GeneratorFromMatrix(Htool.VirtualGenerator):
     def __init__(self, matrix):
         super().__init__()
         self.matrix = matrix
@@ -27,7 +32,44 @@ class GeneratorFromMatrix(Htool.ComplexVirtualGeneratorInUserNumbering):
                 mat[j, k] = self.get_coef(J[j], K[k])
 
 
-class LocalGeneratorFromMatrix(Htool.ComplexVirtualGeneratorInUserNumbering):
+class ComplexGeneratorFromMatrix(Htool.ComplexVirtualGenerator):
+    def __init__(self, matrix):
+        super().__init__()
+        self.matrix = matrix
+
+    def get_coef(self, i, j):
+        return self.matrix[i, j]
+
+    def build_submatrix(self, J, K, mat):
+        for j in range(0, len(J)):
+            for k in range(0, len(K)):
+                mat[j, k] = self.get_coef(J[j], K[k])
+
+
+class LocalGeneratorFromMatrix(Htool.VirtualGenerator):
+    def __init__(
+        self,
+        permutation,
+        local_to_global_numbering,
+        matrix,
+    ):
+        super().__init__(permutation, permutation)
+        self.matrix = matrix
+        self.local_to_global_numbering = local_to_global_numbering
+
+    def get_coef(self, i, j):
+        return self.matrix[i, j]
+
+    def build_submatrix(self, J, K, mat):
+        for j in range(0, len(J)):
+            for k in range(0, len(K)):
+                mat[j, k] = self.get_coef(
+                    self.local_to_global_numbering[J[j]],
+                    self.local_to_global_numbering[K[k]],
+                )
+
+
+class ComplexLocalGeneratorFromMatrix(Htool.ComplexVirtualGenerator):
     def __init__(
         self,
         permutation,
@@ -59,19 +101,19 @@ def pytest_configure(config):
 
 
 @pytest.fixture
-def geometry(
-    is_partition_given: bool, dimension: int, nb_rows: int, nb_cols: int, symmetry
-):
+def geometry(partition_type: str, dimension: int, nb_rows: int, nb_cols: int, symmetry):
     np.random.seed(0)
     sizeWorld = mpi4py.MPI.COMM_WORLD.size
     target_points = None
     source_points = None
     target_partition = None
 
-    if is_partition_given:
+    if partition_type != "None":
         target_points = np.zeros((dimension, nb_rows))
         target_local_size = int(nb_rows / sizeWorld)
-        target_partition = np.zeros((2, sizeWorld))
+        target_partition = np.zeros(
+            (2, sizeWorld),
+        ).astype(int)
 
         for i in range(0, sizeWorld - 1):
             target_partition[0, i] = i * target_local_size
@@ -97,31 +139,60 @@ def geometry(
 
 
 @pytest.fixture
-def cluster(geometry, symmetry):
+def cluster(geometry, symmetry, partition_type, number_of_children):
     # Parameters
     [target_points, source_points, target_partition] = geometry
-    minclustersize = 10
-    number_of_children = 2
+    maximal_leaf_size = 10
 
     # Build clusters
-    cluster_builder = Htool.ClusterBuilder()
-    cluster_builder.set_minclustersize(minclustersize)
+    cluster_builder = Htool.ClusterTreeBuilder()
+    cluster_builder.set_maximal_leaf_size(maximal_leaf_size)
     source_cluster = None
     if symmetry == "N":
         source_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
-            source_points, number_of_children, mpi4py.MPI.COMM_WORLD.size
+            source_points,
+            number_of_children,
+            size_of_partition=mpi4py.MPI.COMM_WORLD.size,
+            radii=None,
+            weights=None,
         )
 
     if target_partition is not None:
+        if partition_type == "Local":
+            target_cluster: Htool.Cluster = (
+                cluster_builder.create_cluster_tree_from_local_partition(
+                    target_points,
+                    number_of_children,
+                    mpi4py.MPI.COMM_WORLD.size,
+                    target_partition,
+                    radii=None,
+                    weights=None,
+                )
+            )
+        else:
+            global_partition = np.zeros(target_points.shape[1])
+            for i in range(0, mpi4py.MPI.COMM_WORLD.size):
+                global_partition[
+                    target_partition[0, i] : target_partition[0, i]
+                    + target_partition[1, i]
+                ] = i
+            target_cluster: Htool.Cluster = (
+                cluster_builder.create_cluster_tree_from_global_partition(
+                    target_points,
+                    number_of_children,
+                    mpi4py.MPI.COMM_WORLD.size,
+                    global_partition,
+                    radii=None,
+                    weights=None,
+                )
+            )
+    else:
         target_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
             target_points,
             number_of_children,
-            mpi4py.MPI.COMM_WORLD.size,
-            target_partition,
-        )
-    else:
-        target_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
-            target_points, number_of_children, mpi4py.MPI.COMM_WORLD.size
+            size_of_partition=mpi4py.MPI.COMM_WORLD.size,
+            radii=None,
+            weights=None,
         )
 
     if symmetry == "S" or symmetry == "H":
@@ -149,16 +220,65 @@ def dense_blocks_generator(request, generator, cluster):
         return None
 
 
-@pytest.fixture(params=[True, False])
+@pytest.fixture(params=["None", "ExtraDiagonal", "LocalAndExtraDiagonal"])
 def local_operator(request, generator, cluster, geometry):
-    if request.param:
+    if request.param == "ExtraDiagonal" or request.param == "LocalAndExtraDiagonal":
         [target_points, source_points, _] = geometry
         [target_cluster, source_cluster] = cluster
-        return CustomLocalOperator(
-            generator,
-            target_cluster.get_cluster_on_partition(mpi4py.MPI.COMM_WORLD.rank),
-            source_cluster,
+        result = ["ExtraDiagonal", []]
+        target_local_cluster = target_cluster.get_cluster_on_partition(
+            mpi4py.MPI.COMM_WORLD.rank
         )
+        source_local_cluster = source_cluster.get_cluster_on_partition(
+            mpi4py.MPI.COMM_WORLD.rank
+        )
+        if source_local_cluster.get_offset() > 0:
+            result[1].append(
+                CustomRestrictedGlobalToLocalOperator(
+                    generator,
+                    Htool.LocalRenumbering(target_local_cluster),
+                    Htool.LocalRenumbering(
+                        0,
+                        source_local_cluster.get_offset(),
+                        source_cluster.get_permutation(),
+                    ),
+                    False,
+                    False,
+                )
+            )
+        if (
+            source_cluster.get_size()
+            - source_local_cluster.get_size()
+            - source_local_cluster.get_offset()
+            > 0
+        ):
+            result[1].append(
+                CustomRestrictedGlobalToLocalOperator(
+                    generator,
+                    Htool.LocalRenumbering(target_local_cluster),
+                    Htool.LocalRenumbering(
+                        source_local_cluster.get_size()
+                        + source_local_cluster.get_offset(),
+                        source_cluster.get_size()
+                        - source_local_cluster.get_size()
+                        - source_local_cluster.get_offset(),
+                        source_cluster.get_permutation(),
+                    ),
+                    False,
+                    False,
+                )
+            )
+        if request.param == "LocalAndExtraDiagonal":
+            result[0] = "LocalAndExtraDiagonal"
+            result[1].append(
+                CustomLocalToLocalOperator(
+                    generator,
+                    Htool.LocalRenumbering(target_local_cluster),
+                    Htool.LocalRenumbering(source_local_cluster),
+                )
+            )
+
+        return result
     else:
         return None
 
@@ -180,16 +300,17 @@ def default_distributed_operator(
 ):
     [target_cluster, source_cluster] = cluster
 
-    return Htool.DefaultApproximationBuilder(
-        generator,
+    return [
         target_cluster,
         source_cluster,
-        epsilon,
-        eta,
-        symmetry,
-        UPLO,
-        mpi4py.MPI.COMM_WORLD,
-    )
+        Htool.DefaultApproximationBuilder(
+            generator,
+            target_cluster,
+            source_cluster,
+            Htool.HMatrixTreeBuilder(epsilon, eta, symmetry, UPLO),
+            mpi4py.MPI.COMM_WORLD,
+        ),
+    ]
 
 
 @pytest.fixture
@@ -205,42 +326,48 @@ def custom_distributed_operator(
     low_rank_approximation,
 ):
     [target_cluster, source_cluster] = cluster
-
-    if local_operator is not None:
-        distributed_operator_holder = Htool.CustomApproximationBuilder(
-            target_cluster,
-            source_cluster,
-            symmetry,
-            UPLO,
-            mpi4py.MPI.COMM_WORLD,
-            local_operator,
-        )
-    else:
-        hmatrix_builder = Htool.HMatrixBuilder(
-            target_cluster,
-            source_cluster,
+    if local_operator is None:
+        hmatrix_tree_builder = Htool.HMatrixTreeBuilder(
             epsilon,
             eta,
             symmetry,
             UPLO,
-            -1,
-            mpi4py.MPI.COMM_WORLD.rank,
-            mpi4py.MPI.COMM_WORLD.rank,
         )
         if dense_blocks_generator is not None:
-            hmatrix_builder.set_dense_blocks_generator(dense_blocks_generator)
+            hmatrix_tree_builder.set_dense_blocks_generator(dense_blocks_generator)
         if low_rank_approximation is not None:
-            hmatrix_builder.set_low_rank_generator(low_rank_approximation)
+            hmatrix_tree_builder.set_low_rank_generator(low_rank_approximation)
 
-        distributed_operator_holder = Htool.DistributedOperatorFromHMatrix(
+        distributed_operator_holder = Htool.DefaultApproximationBuilder(
             generator,
             target_cluster,
             source_cluster,
-            hmatrix_builder,
+            hmatrix_tree_builder,
             mpi4py.MPI.COMM_WORLD,
         )
 
-    return distributed_operator_holder
+    elif local_operator[0] == "ExtraDiagonal":
+        distributed_operator_holder = Htool.DefaultLocalApproximationBuilder(
+            generator,
+            target_cluster,
+            source_cluster,
+            Htool.HMatrixTreeBuilder(epsilon, eta, symmetry, UPLO),
+            mpi4py.MPI.COMM_WORLD,
+        )
+        for op in local_operator[1]:
+            distributed_operator_holder.distributed_operator.add_global_to_local_operator(
+                op
+            )
+    elif local_operator[0] == "LocalAndExtraDiagonal":
+        distributed_operator_holder = Htool.CustomApproximationBuilder(
+            target_cluster, source_cluster, mpi4py.MPI.COMM_WORLD, local_operator[1][-1]
+        )
+        for op in local_operator[1][0:-1]:
+            distributed_operator_holder.distributed_operator.add_global_to_local_operator(
+                op
+            )
+
+    return [target_cluster, source_cluster, distributed_operator_holder]
 
 
 @pytest.fixture()
@@ -274,6 +401,9 @@ def load_data_solver(symmetry, mu):
         A = np.frombuffer(data[8:], dtype=np.dtype("complex128"))
         A = np.transpose(A.reshape((m, n)))
 
+    if symmetry == "S":
+        A = A.real
+
     # Geometry
     with open(
         path_to_data / "geometry.bin",
@@ -299,6 +429,9 @@ def load_data_solver(symmetry, mu):
     else:
         f = rhs
 
+    if symmetry == "S":
+        f = f.real
+
     # Cluster
     cluster = Htool.read_cluster_from(
         str(path_to_data / ("cluster_" + str(size) + "_cluster_tree_properties.csv")),
@@ -312,6 +445,9 @@ def load_data_solver(symmetry, mu):
     ) as input:
         data = input.read()
         x_ref = np.frombuffer(data[4:], dtype=np.dtype("complex128"))
+
+    if symmetry == "S":
+        x_ref = x_ref.real
 
     # Domain decomposition
     with open(
@@ -361,6 +497,7 @@ def load_data_solver(symmetry, mu):
             local_neumann_matrix = np.transpose(
                 local_neumann_matrix.reshape((m, n), order="C")
             ).copy("F")
+            local_neumann_matrix = local_neumann_matrix.real
     return [
         A,
         x_ref,

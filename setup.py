@@ -43,7 +43,7 @@ class CMakeBuild(build_ext):
         # from Python.
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}{os.sep}",
-            f"-DPYTHON_EXECUTABLE={sys.executable}",
+            f"-DPython_EXECUTABLE={sys.executable}",
             f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
         ]
         build_args = []
@@ -159,6 +159,36 @@ class CMakeBuild(build_ext):
         #     ["cmake", "--build", "."] + build_args, cwd=self.build_temp
         # )
 
+        # --- Generate stubs for the extension ---
+        try:
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(extdir) + os.pathsep + env.get("PYTHONPATH", "")
+            subprocess.run(
+                [
+                    "pybind11-stubgen",
+                    ext.name,
+                    "-o",
+                    str(extdir),
+                ],
+                env=env,
+                check=True,
+            )
+            init_stub = Path(extdir) / "Htool.pyi"
+            if init_stub.exists():
+                content = init_stub.read_text()
+                content = "import mpi4py\n" + content
+
+                # Replace bad C++ types with usable Python ones
+                replacements = {
+                    "MPI_Comm_wrapper": '"mpi4py.MPI.Comm"',
+                }
+                for bad, good in replacements.items():
+                    content = content.replace(bad, good)
+                init_stub.write_text(content)
+
+        except Exception as e:
+            print(f"⚠️ Could not generate stubs: {e}")
+
 
 setup(
     name="Htool",
@@ -170,4 +200,6 @@ setup(
     ext_modules=[CMakeExtension("Htool")],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
+    package_data={"": ["*.pyi"]},
+    include_package_data=True,
 )

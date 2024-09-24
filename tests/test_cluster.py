@@ -5,12 +5,17 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "dimension,nb_rows,nb_cols,symmetry,is_partition_given",
+    "dimension,nb_rows,nb_cols,symmetry,partition_type,number_of_children",
     [
-        (2, 500, 500, "N", False),
-        (3, 500, 500, "N", False),
-        (2, 500, 500, "N", True),
-        (3, 500, 500, "N", True),
+        (2, 500, 500, "N", "None", 2),
+        (3, 500, 500, "N", "None", 2),
+        (2, 500, 500, "N", "Local", 2),
+        (3, 500, 500, "N", "Local", 2),
+        (2, 500, 500, "N", "Global", 2),
+        (3, 500, 500, "N", "Global", 2),
+        (2, 500, 500, "N", "None", 3),
+        (2, 500, 500, "N", "None", 9),
+        (2, 500, 500, "N", "None", 10),
     ],
 )
 def test_cluster(geometry, cluster):
