@@ -13,12 +13,13 @@ void declare_solver_utility(py::module &m, std::string prefix = "") {
     py::class_<DDMSolverBuilder> ddm_solver_class(m, ddm_solver_name.c_str());
     ddm_solver_class.def(py::init<DistributedOperator<CoefficientPrecision> &, HMatrix<CoefficientPrecision, CoordinatePrecision> &>());
 
-    ddm_solver_class.def(py::init<DistributedOperator<CoefficientPrecision> &, HMatrix<CoefficientPrecision, CoordinatePrecision> &, const VirtualGeneratorInUserNumbering<CoefficientPrecision> &, const std::vector<int> &, const std::vector<int> &, const std::vector<int> &, const std::vector<std::vector<int>> &>());
-    ddm_solver_class.def(py::init([](DistributedOperator<CoefficientPrecision> &distributed_operator, const std::vector<int> &ovr_subdomain_to_global, const std::vector<int> &cluster_to_ovr_subdomain, const std::vector<int> &neighbors, const std::vector<std::vector<int>> &intersections, const VirtualGeneratorInUserNumbering<CoefficientPrecision> &generator, const py::array_t<CoordinatePrecision, py::array::f_style | py::array::forcecast> coordinates, underlying_type<CoefficientPrecision> epsilon, CoordinatePrecision eta) {
+    ddm_solver_class.def(py::init<DistributedOperator<CoefficientPrecision> &, HMatrix<CoefficientPrecision, CoordinatePrecision> &, const VirtualGenerator<CoefficientPrecision> &, const std::vector<int> &, const std::vector<int> &, const std::vector<int> &, const std::vector<std::vector<int>> &>(),py::keep_alive<1, 2>(),py::keep_alive<1, 3>());
+    ddm_solver_class.def(py::init([](DistributedOperator<CoefficientPrecision> &distributed_operator, const std::vector<int> &ovr_subdomain_to_global, const std::vector<int> &cluster_to_ovr_subdomain, const std::vector<int> &neighbors, const std::vector<std::vector<int>> &intersections, const VirtualGenerator<CoefficientPrecision> &generator, const py::array_t<CoordinatePrecision, py::array::f_style | py::array::forcecast> coordinates, underlying_type<CoefficientPrecision> epsilon, CoordinatePrecision eta) {
         return new DDMSolverBuilder(distributed_operator, ovr_subdomain_to_global, cluster_to_ovr_subdomain, neighbors, intersections, generator, coordinates.shape()[0], coordinates.data(), epsilon, eta);
-    }));
+    }),py::keep_alive<1, 2>());
 
     ddm_solver_class.def_property_readonly(
         "solver", [](const DDMSolverBuilder &self) { return &self.solver; }, py::return_value_policy::reference_internal);
+    ddm_solver_class.def_property_readonly("local_to_global_numbering",[](const DDMSolverBuilder &self) { return &self.local_to_global_numbering; }, py::return_value_policy::reference_internal);
 }
 #endif

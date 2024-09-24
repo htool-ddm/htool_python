@@ -16,7 +16,7 @@ void declare_hmatrix_builder(py::module &m, const std::string &className) {
 
     // Build
     // py_class.def("build", [](const Class &self, const VirtualGenerator<CoefficientPrecision> &generator) { return self.build(generator); });
-    py_class.def("build", [](const Class &self, const VirtualGeneratorInUserNumbering<CoefficientPrecision> &generator) { return self.build(GeneratorWithPermutation<CoefficientPrecision>(generator, self.get_target_cluster().get_permutation().data(), self.get_source_cluster().get_permutation().data())); });
+    py_class.def("build", [](const Class &self, const VirtualGenerator<CoefficientPrecision> &generator) { return self.build(InternalGeneratorWithPermutation<CoefficientPrecision>(generator, self.get_target_cluster().get_permutation().data(), self.get_source_cluster().get_permutation().data())); });
 
     // Setters
     py_class.def("set_minimal_source_depth", &Class::set_minimal_source_depth);

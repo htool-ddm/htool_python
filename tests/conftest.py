@@ -13,7 +13,7 @@ from example.define_custom_local_operator import CustomLocalOperator
 from example.define_custom_low_rank_generator import CustomSVD
 
 
-class GeneratorFromMatrix(Htool.ComplexVirtualGeneratorInUserNumbering):
+class GeneratorFromMatrix(Htool.ComplexVirtualGenerator):
     def __init__(self, matrix):
         super().__init__()
         self.matrix = matrix
@@ -27,7 +27,7 @@ class GeneratorFromMatrix(Htool.ComplexVirtualGeneratorInUserNumbering):
                 mat[j, k] = self.get_coef(J[j], K[k])
 
 
-class LocalGeneratorFromMatrix(Htool.ComplexVirtualGeneratorInUserNumbering):
+class LocalGeneratorFromMatrix(Htool.ComplexVirtualGenerator):
     def __init__(
         self,
         permutation,

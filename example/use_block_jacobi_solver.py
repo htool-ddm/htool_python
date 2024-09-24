@@ -44,7 +44,6 @@ default_approximation = Htool.DefaultApproximationBuilder(
 
 # Solver with block Jacobi preconditionner
 block_diagonal_hmatrix = copy.deepcopy(default_approximation.block_diagonal_hmatrix)
-test = default_approximation.block_diagonal_hmatrix
 default_solver_builder = Htool.DDMSolverBuilder(
     default_approximation.distributed_operator, block_diagonal_hmatrix
 )

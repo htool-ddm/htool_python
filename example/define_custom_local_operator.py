@@ -5,7 +5,7 @@ import numpy as np
 class CustomLocalOperator(Htool.LocalOperator):
     def __init__(
         self,
-        generator: Htool.VirtualGeneratorInUserNumbering,
+        generator: Htool.VirtualGenerator,
         target_cluster: Htool.Cluster,
         source_cluster: Htool.Cluster,
         symmetry: str = "N",

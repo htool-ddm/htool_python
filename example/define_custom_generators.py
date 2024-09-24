@@ -2,7 +2,7 @@ import Htool
 import numpy as np
 
 
-class CustomGenerator(Htool.VirtualGeneratorInUserNumbering):
+class CustomGenerator(Htool.VirtualGenerator):
     def __init__(self, target_points, source_points):
         super().__init__()
         self.target_points = target_points

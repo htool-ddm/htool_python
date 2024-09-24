@@ -5,12 +5,13 @@ import numpy as np
 
 
 class CustomSVD(Htool.VirtualLowRankGenerator):
-    def __init__(self, generator: Htool.VirtualGeneratorInUserNumbering):
-        super().__init__(generator)
+    def __init__(self, generator: Htool.VirtualGenerator):
+        super().__init__()
+        self.generator = generator
 
     def build_low_rank_approximation(self, rows, cols, epsilon):
         submat = np.zeros((len(rows), len(cols)), order="F")
-        self.build_submatrix(rows, cols, submat)
+        self.generator.build_submatrix(rows, cols, submat)
         u, s, vh = np.linalg.svd(submat, full_matrices=False)
 
         norm = np.linalg.norm(submat)
@@ -22,4 +23,3 @@ class CustomSVD(Htool.VirtualLowRankGenerator):
         count = min(count + 1, min(len(rows), len(cols)))
         self.set_U(u[:, 0:count] * s[0:count])
         self.set_V(vh[0:count, :])
-        self.set_rank(count)

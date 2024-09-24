@@ -56,7 +56,7 @@ PYBIND11_MODULE(Htool, m) {
 
     declare_hmatrix_builder<double, double>(m, "HMatrixBuilder");
     declare_HMatrix<double, double>(m, "HMatrix");
-    declare_virtual_generator<double>(m, "VirtualGeneratorInUserNumbering", "IGeneratorInUserNumbering");
+    declare_virtual_generator<double>(m, "VirtualGenerator", "IGenerator");
     declare_custom_VirtualLowRankGenerator<double, double>(m, "VirtualLowRankGenerator");
     declare_custom_VirtualDenseBlocksGenerator<double>(m, "VirtualDenseBlocksGenerator");
 
@@ -77,7 +77,7 @@ PYBIND11_MODULE(Htool, m) {
 
     declare_hmatrix_builder<std::complex<double>, double>(m, "ComplexHMatrixBuilder");
     declare_HMatrix<std::complex<double>, double>(m, "ComplexHMatrix");
-    declare_virtual_generator<std::complex<double>>(m, "ComplexVirtualGeneratorInUserNumbering", "IComplexGeneratorInUserNumbering");
+    declare_virtual_generator<std::complex<double>>(m, "ComplexVirtualGenerator", "IComplexGenerator");
 
     declare_distributed_operator<std::complex<double>>(m, "ComplexDistributedOperator");
     declare_distributed_operator_utility<std::complex<double>, double>(m, "Complex");
