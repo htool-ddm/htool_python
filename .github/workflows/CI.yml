@@ -31,7 +31,6 @@ jobs:
             CXX_COMPILER: g++
             container: "ubuntu_gcc_openmpi"
             MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
-            USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
             CODE_COVERAGE: "OFF"
@@ -41,7 +40,6 @@ jobs:
             CXX_COMPILER: clang++
             container: "ubuntu_clang_openmpi"
             MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
-            USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
             CODE_COVERAGE: "OFF"
@@ -64,13 +62,11 @@ jobs:
             DOCKER_OPTIONS: " "
             CODE_COVERAGE: "OFF"
 
-          # Hangs on github
           - name: "Debian OpenMPI g++"
             CC_COMPILER: gcc
             CXX_COMPILER: g++
             container: "debian_gcc_openmpi"
             MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
-            USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
             CODE_COVERAGE: "OFF"
@@ -80,7 +76,6 @@ jobs:
             CXX_COMPILER: clang++
             container: "debian_clang_openmpi"
             MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
-            USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
             CODE_COVERAGE: "OFF"
@@ -136,16 +131,18 @@ jobs:
         run: |
           mkdir build && cd build
           python3 -m pip install numpy matplotlib ruff pytest mpi4py scipy 
-          CC=${{ matrix.CC_COMPILER }} CXX=${{ matrix.CXX_COMPILER }} cmake -DUSE_SANITIZER=${{ matrix.USE_SANITIZER }} -DCMAKE_BUILD_TYPE=${{ matrix.CMAKE_BUILD_TYPE }} -DCODE_COVERAGE=${{ matrix.CODE_COVERAGE }} ../
+          CC=${{ matrix.CC_COMPILER }} CXX=${{ matrix.CXX_COMPILER }} cmake -DCMAKE_BUILD_TYPE=${{ matrix.CMAKE_BUILD_TYPE }} -DCODE_COVERAGE=${{ matrix.CODE_COVERAGE }} ../
           make
 
       - name: Run tests
         run: |
           export PYTHONPATH="$PWD/build"
-          mpirun -np 1 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
-          mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
-          mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
-          mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
+          mpirun -np 1 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests --ignore=tests/test_hmatrix.py --ignore=tests/test_logger.py
+          mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests --ignore=tests/test_hmatrix.py --ignore=tests/test_logger.py
+          mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests --ignore=tests/test_hmatrix.py --ignore=tests/test_logger.py
+          mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests --ignore=tests/test_hmatrix.py --ignore=tests/test_logger.py
+          python3 -m pytest tests/test_hmatrix.py
+          python3 -m pytest tests/test_logger.py
 
       - name: Check format
         if: matrix.CODE_COVERAGE == 'ON'

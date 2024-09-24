@@ -5,10 +5,9 @@ authors = [{ name = "Pierre Marchand", email = "test@test.com" }]
 description = "CLI utility to automate asciinema"
 readme = "README.md"
 requires-python = ">=3.7"
-license = { text = "MIT License" }
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: MacOS",
     "Operating System :: Unix",
 ]
@@ -17,11 +16,11 @@ keywords = [
     "hierarchical matrix",
     "domain decomposition method",
 ]
-dependencies = ["mpi4py", "numpy"]
+dependencies = ["mpi4py>=4.0.0", "numpy"]
 
 
 [project.optional-dependencies]
-dev = ["ruff", "matplotlib>=3.0.0", "pytest", "scipy"]
+dev = ["ruff", "matplotlib>=3.0.0", "pytest", "scipy", "pybind11-stubgen"]
 
 
 [project.urls]
@@ -50,5 +49,12 @@ unfixable = []
 
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "cmake", "mpi4py", "numpy"]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "cmake",
+    "mpi4py",
+    "numpy",
+    "pybind11-stubgen",
+]
 build-backend = "setuptools.build_meta"
