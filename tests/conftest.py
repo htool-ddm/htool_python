@@ -217,15 +217,10 @@ def custom_distributed_operator(
         )
     else:
         hmatrix_builder = Htool.HMatrixBuilder(
-            target_cluster,
-            source_cluster,
             epsilon,
             eta,
             symmetry,
             UPLO,
-            -1,
-            mpi4py.MPI.COMM_WORLD.rank,
-            mpi4py.MPI.COMM_WORLD.rank,
         )
         if dense_blocks_generator is not None:
             hmatrix_builder.set_dense_blocks_generator(dense_blocks_generator)

@@ -21,11 +21,11 @@ class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<Coefficient
 
     VirtualLowRankGeneratorPython() {}
 
-    void copy_low_rank_approximation(const VirtualInternalGenerator<CoefficientPrecision> &A, const Cluster<CoordinatePrecision> &target_cluster, const Cluster<CoordinatePrecision> &source_cluster, underlying_type<CoefficientPrecision> epsilon, int &rank, Matrix<CoefficientPrecision> &U, Matrix<CoefficientPrecision> &V) const override {
-        py::array_t<int, py::array::f_style> rows(std::array<int,1>{target_cluster.get_size()}, target_cluster.get_permutation().data() + target_cluster.get_offset(), py::capsule(target_cluster.get_permutation().data()));
-        py::array_t<int, py::array::f_style> cols(std::array<int,1>{source_cluster.get_size()}, source_cluster.get_permutation().data() + source_cluster.get_offset(), py::capsule(source_cluster.get_permutation().data()));
+    void copy_low_rank_approximation(const VirtualInternalGenerator<CoefficientPrecision> &A, int M, int N, const int *const rows, const int *const cols, underlying_type<CoefficientPrecision> epsilon, int &rank, Matrix<CoefficientPrecision> &U, Matrix<CoefficientPrecision> &V) const override {
+        py::array_t<int> py_rows(std::array<long int, 1>{M}, rows, py::capsule(rows));
+        py::array_t<int> py_cols(std::array<long int, 1>{N}, cols, py::capsule(cols));
 
-        build_low_rank_approximation(rows, cols, epsilon);
+        build_low_rank_approximation(py_rows, py_cols, epsilon);
         U.assign(m_mats_U.back().shape()[0], m_mats_U.back().shape()[1], m_mats_U.back().mutable_data(), false);
         V.assign(m_mats_V.back().shape()[0], m_mats_V.back().shape()[1], m_mats_V.back().mutable_data(), false);
     }
@@ -39,7 +39,6 @@ class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<Coefficient
         m_mats_U.push_back(U0); // no copy here
     }
     void set_V(py::array_t<CoefficientPrecision, py::array::f_style> V0) { m_mats_V.push_back(V0); }
-
 };
 
 template <typename CoefficientPrecision, typename CoordinatePrecision>

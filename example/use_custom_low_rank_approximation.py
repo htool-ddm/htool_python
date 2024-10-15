@@ -39,18 +39,8 @@ generator = CustomGenerator(target_points, source_points)
 low_rank_generator = CustomSVD(generator)
 
 # Build HMatrix
-hmatrix_builder = Htool.HMatrixBuilder(
-    target_cluster,
-    source_cluster,
-    epsilon,
-    eta,
-    "N",
-    "N",
-    -1,
-    mpi4py.MPI.COMM_WORLD.rank,
-    mpi4py.MPI.COMM_WORLD.rank,
-)
-hmatrix_builder.set_low_rank_generator(low_rank_generator)
+hmatrix_builder = Htool.HMatrixBuilder(epsilon, eta, "N", "N")
+# or hmatrix_builder.set_low_rank_generator(low_rank_generator)
 
 # Build distributed operator
 distributed_operator_from_hmatrix = Htool.DistributedOperatorFromHMatrix(

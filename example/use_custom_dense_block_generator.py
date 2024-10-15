@@ -34,17 +34,8 @@ custom_dense_blocks_generator = CustomDenseBlocksGenerator(
 )
 
 # Build HMatrix
-hmatrix_builder = Htool.HMatrixBuilder(
-    target_cluster,
-    target_cluster,
-    epsilon,
-    eta,
-    "N",
-    "N",
-    -1,
-    mpi4py.MPI.COMM_WORLD.rank,
-    mpi4py.MPI.COMM_WORLD.rank,
-)
+# low_rank_generator = CustomSVD(generator)
+hmatrix_builder = Htool.HMatrixBuilder(epsilon, eta, "N", "N")
 
 hmatrix_builder.set_dense_blocks_generator(custom_dense_blocks_generator)
 
