@@ -36,9 +36,9 @@ class PyVirtualGenerator : public VirtualGeneratorPython<CoefficientPrecision> {
     /* Trampoline (need one for each virtual function) */
     virtual void build_submatrix(const py::array_t<int> &J, const py::array_t<int> &K, py::array_t<CoefficientPrecision, py::array::f_style> &mat) const override {
         PYBIND11_OVERRIDE_PURE(
-            void,                                                        /* Return type */
+            void,                                         /* Return type */
             VirtualGeneratorPython<CoefficientPrecision>, /* Parent class */
-            build_submatrix,                                             /* Name of function in C++ (must match Python name) */
+            build_submatrix,                              /* Name of function in C++ (must match Python name) */
             J,
             K,
             mat /* Argument(s) */
