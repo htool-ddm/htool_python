@@ -20,7 +20,7 @@ void declare_hmatrix_builder(py::module &m, const std::string &className) {
     //              py::arg("symmetry"),
     //              py::arg("UPLO"));
 
-    py_class.def(py::init([](underlying_type<CoefficientPrecision> epsilon, CoordinatePrecision eta, char symmetry, char UPLO, int reqrank, std::shared_ptr<VirtualLowRankGeneratorPython<CoefficientPrecision, CoordinatePrecision>> low_rank_strategy) {
+    py_class.def(py::init([](underlying_type<CoefficientPrecision> epsilon, CoordinatePrecision eta, char symmetry, char UPLO, int reqrank, std::shared_ptr<VirtualLowRankGeneratorPython<CoefficientPrecision>> low_rank_strategy) {
                      std::cout << epsilon << "\n";
                      return std::unique_ptr<Class>(new Class(epsilon, eta, symmetry, UPLO, reqrank, low_rank_strategy));
                  }),
@@ -38,7 +38,7 @@ void declare_hmatrix_builder(py::module &m, const std::string &className) {
     // Setters
     py_class.def("set_minimal_source_depth", &Class::set_minimal_source_depth);
     py_class.def("set_minimal_target_depth", &Class::set_minimal_target_depth);
-    py_class.def("set_low_rank_generator", [](Class &self, std::shared_ptr<VirtualLowRankGeneratorPython<CoefficientPrecision, CoordinatePrecision>> low_rank_generator) { self.set_low_rank_generator(low_rank_generator); });
+    py_class.def("set_low_rank_generator", [](Class &self, std::shared_ptr<VirtualLowRankGeneratorPython<CoefficientPrecision>> low_rank_generator) { self.set_low_rank_generator(low_rank_generator); });
     py_class.def("set_dense_blocks_generator", [](Class &self, std::shared_ptr<VirtualDenseBlocksGeneratorPython<CoefficientPrecision>> dense_blocks_generator) { self.set_dense_blocks_generator(dense_blocks_generator); });
 }
 #endif

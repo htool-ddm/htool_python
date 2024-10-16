@@ -57,7 +57,7 @@ PYBIND11_MODULE(Htool, m) {
     declare_hmatrix_builder<double, double>(m, "HMatrixBuilder");
     declare_HMatrix<double, double>(m, "HMatrix");
     declare_virtual_generator<double>(m, "VirtualGenerator", "IGenerator");
-    declare_custom_VirtualLowRankGenerator<double, double>(m, "VirtualLowRankGenerator");
+    declare_custom_VirtualLowRankGenerator<double>(m, "VirtualLowRankGenerator");
     declare_custom_VirtualDenseBlocksGenerator<double>(m, "VirtualDenseBlocksGenerator");
 
     declare_local_operator<double, double>(m, "LocalOperator");

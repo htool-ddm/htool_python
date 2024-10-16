@@ -11,17 +11,17 @@ namespace py = pybind11;
 using namespace pybind11::literals;
 using namespace htool;
 
-template <typename CoefficientPrecision, typename CoordinatePrecision = CoefficientPrecision>
-class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<CoefficientPrecision, CoordinatePrecision> {
+template <typename CoefficientPrecision>
+class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<CoefficientPrecision> {
     mutable std::vector<py::array_t<CoefficientPrecision, py::array::f_style>> m_mats_U; // owned by Python
     mutable std::vector<py::array_t<CoefficientPrecision, py::array::f_style>> m_mats_V; // owned by Python
 
   public:
-    using VirtualLowRankGenerator<CoefficientPrecision, CoordinatePrecision>::VirtualLowRankGenerator;
+    using VirtualLowRankGenerator<CoefficientPrecision>::VirtualLowRankGenerator;
 
     VirtualLowRankGeneratorPython() {}
 
-    void copy_low_rank_approximation(const VirtualInternalGenerator<CoefficientPrecision> &A, int M, int N, const int *const rows, const int *const cols, underlying_type<CoefficientPrecision> epsilon, int &rank, Matrix<CoefficientPrecision> &U, Matrix<CoefficientPrecision> &V) const override {
+    void copy_low_rank_approximation(int M, int N, const int *const rows, const int *const cols, underlying_type<CoefficientPrecision> epsilon, int &rank, Matrix<CoefficientPrecision> &U, Matrix<CoefficientPrecision> &V) const override {
         py::array_t<int> py_rows(std::array<long int, 1>{M}, rows, py::capsule(rows));
         py::array_t<int> py_cols(std::array<long int, 1>{N}, cols, py::capsule(cols));
 
@@ -41,10 +41,10 @@ class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<Coefficient
     void set_V(py::array_t<CoefficientPrecision, py::array::f_style> V0) { m_mats_V.push_back(V0); }
 };
 
-template <typename CoefficientPrecision, typename CoordinatePrecision>
-class PyVirtualLowRankGenerator : public VirtualLowRankGeneratorPython<CoefficientPrecision, CoordinatePrecision> {
+template <typename CoefficientPrecision>
+class PyVirtualLowRankGenerator : public VirtualLowRankGeneratorPython<CoefficientPrecision> {
   public:
-    using VirtualLowRankGeneratorPython<CoefficientPrecision, CoordinatePrecision>::VirtualLowRankGeneratorPython;
+    using VirtualLowRankGeneratorPython<CoefficientPrecision>::VirtualLowRankGeneratorPython;
 
     /* Trampoline (need one for each virtual function) */
     virtual void build_low_rank_approximation(const py::array_t<int, py::array::f_style> &rows, const py::array_t<int, py::array::f_style> &cols, underlying_type<CoefficientPrecision> epsilon) const override {
@@ -58,10 +58,10 @@ class PyVirtualLowRankGenerator : public VirtualLowRankGeneratorPython<Coefficie
     }
 };
 
-template <typename CoefficientPrecision, typename CoordinatePrecision>
+template <typename CoefficientPrecision>
 void declare_custom_VirtualLowRankGenerator(py::module &m, const std::string &className) {
-    using Class = VirtualLowRankGeneratorPython<CoefficientPrecision, CoordinatePrecision>;
-    py::class_<Class, std::shared_ptr<Class>, PyVirtualLowRankGenerator<CoefficientPrecision, CoordinatePrecision>> py_class(m, className.c_str());
+    using Class = VirtualLowRankGeneratorPython<CoefficientPrecision>;
+    py::class_<Class, std::shared_ptr<Class>, PyVirtualLowRankGenerator<CoefficientPrecision>> py_class(m, className.c_str());
     py_class.def(py::init<>());
     py_class.def("build_low_rank_approximation", &Class::build_low_rank_approximation);
     py_class.def("set_U", &Class::set_U);
