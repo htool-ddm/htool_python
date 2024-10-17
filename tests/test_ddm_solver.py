@@ -238,8 +238,8 @@ def test_ddm_solver(
             intersections,
             generator,
             geometry,
-            epsilon,
-            eta,
+            Htool.ClusterBuilder(),
+            Htool.ComplexHMatrixBuilder(epsilon, eta * 1.0, symmetry, UPLO),
         )
 
     solver = default_solver_builder.solver

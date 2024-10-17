@@ -21,7 +21,6 @@ void declare_hmatrix_builder(py::module &m, const std::string &className) {
     //              py::arg("UPLO"));
 
     py_class.def(py::init([](underlying_type<CoefficientPrecision> epsilon, CoordinatePrecision eta, char symmetry, char UPLO, int reqrank, std::shared_ptr<VirtualLowRankGeneratorPython<CoefficientPrecision>> low_rank_strategy) {
-                     std::cout << epsilon << "\n";
                      return std::unique_ptr<Class>(new Class(epsilon, eta, symmetry, UPLO, reqrank, low_rank_strategy));
                  }),
                  py::arg("epsilon"),
