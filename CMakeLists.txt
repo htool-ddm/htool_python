@@ -13,13 +13,13 @@ else()
         LANGUAGES CXX)
 endif()
 
-# To force c++11
+# To force c++14
 if(${CMAKE_VERSION} VERSION_LESS 3.1)
-    add_compile_options(-std=c++11)
+    add_compile_options(-std=c++14)
 elseif(${CMAKE_VERSION} VERSION_LESS 3.6.3 AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-    add_compile_options(-std=c++11)
+    add_compile_options(-std=c++14)
 else()
-    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
@@ -78,11 +78,20 @@ target_include_directories(
             ${MPI4PY_INCLUDE_DIR})
 target_link_libraries(Htool PRIVATE ${MPI_LIBRARIES} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} ${ARPACK_LIBRARIES} ${OpenMP_CXX_LIBRARIES})
 
-target_compile_definitions(Htool PRIVATE "-DPYTHON_INTERFACE" "-DWITH_HPDDM")
+if("${BLA_VENDOR}" STREQUAL "Intel10_32"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64lp"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64lp_seq"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64ilp"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64ilp_seq"
+   OR "${BLA_VENDOR}" STREQUAL "Intel10_64_dyn")
+    target_compile_definitions(htool PRIVATE "-DHPDDM_MKL -DHTOOL_MKL")
+endif()
+
+target_compile_definitions(Htool PRIVATE "-DHTOOL_WITH_PYTHON_INTERFACE" "-DHTOOL_WITH_HPDDM")
 
 if(CODE_COVERAGE AND (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
     target_compile_options(Htool PRIVATE -fprofile-arcs -ftest-coverage)
     target_link_libraries(Htool PRIVATE gcov)
 endif()
 
-# target_compile_features(Htool INTERFACE cxx_std_11)
+# target_compile_features(Htool INTERFACE cxx_std_14)

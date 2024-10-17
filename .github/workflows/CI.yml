@@ -29,27 +29,27 @@ jobs:
           - name: "Ubuntu OpenMPI g++"
             CC_COMPILER: gcc
             CXX_COMPILER: g++
-            container: "ubuntu_openmpi"
+            container: "ubuntu_gcc_openmpi"
             MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
             USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
-            DOCKER_OPTIONS: " "
+            DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
             CODE_COVERAGE: "OFF"
 
           - name: "Ubuntu OpenMPI clang++"
             CC_COMPILER: clang
             CXX_COMPILER: clang++
-            container: "ubuntu_openmpi"
+            container: "ubuntu_clang_openmpi"
             MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
             USE_SANITIZER: ""
             CMAKE_BUILD_TYPE: Release
-            DOCKER_OPTIONS: " "
+            DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
             CODE_COVERAGE: "OFF"
 
           - name: "Ubuntu MPICH g++"
             CC_COMPILER: gcc
             CXX_COMPILER: g++
-            container: "ubuntu_mpich"
+            container: "ubuntu_gcc_mpich"
             MPIEXEC_PREFLAGS: ""
             CMAKE_BUILD_TYPE: Debug
             DOCKER_OPTIONS: " "
@@ -58,35 +58,37 @@ jobs:
           - name: "Ubuntu MPICH clang++"
             CC_COMPILER: clang
             CXX_COMPILER: clang++
-            container: "ubuntu_mpich"
+            container: "ubuntu_clang_mpich"
             MPIEXEC_PREFLAGS: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
             CODE_COVERAGE: "OFF"
 
           # Hangs on github
-          # - name: "Debian OpenMPI g++"
-          #   CC_COMPILER: gcc
-          #   CXX_COMPILER: g++
-          #   container: "debian_openmpi"
-          #   MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe --mca btl_vader_single_copy_mechanism none"
-          #   USE_SANITIZER: ""
-          #   CMAKE_BUILD_TYPE: Debug
-          #   DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
+          - name: "Debian OpenMPI g++"
+            CC_COMPILER: gcc
+            CXX_COMPILER: g++
+            container: "debian_gcc_openmpi"
+            MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
+            USE_SANITIZER: ""
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
+            CODE_COVERAGE: "OFF"
 
-          # - name: "Debian OpenMPI clang++"
-          #   CC_COMPILER: clang
-          #   CXX_COMPILER: clang++
-          #   container: "debian_openmpi"
-          #   MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe --mca btl_vader_single_copy_mechanism none"
-          #   USE_SANITIZER: ""
-          #   CMAKE_BUILD_TYPE: Debug
-          #   DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
+          - name: "Debian OpenMPI clang++"
+            CC_COMPILER: clang
+            CXX_COMPILER: clang++
+            container: "debian_clang_openmpi"
+            MPIEXEC_PREFLAGS: "--allow-run-as-root --oversubscribe"
+            USE_SANITIZER: ""
+            CMAKE_BUILD_TYPE: Release
+            DOCKER_OPTIONS: "--cap-add SYS_PTRACE"
+            CODE_COVERAGE: "OFF"
 
           - name: "Debian MPICH g++"
             CC_COMPILER: gcc
             CXX_COMPILER: g++
-            container: "debian_mpich"
+            container: "debian_gcc_mpich"
             MPIEXEC_PREFLAGS: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
@@ -95,7 +97,7 @@ jobs:
           - name: "Debian MPICH clang++"
             CC_COMPILER: clang
             CXX_COMPILER: clang++
-            container: "debian_mpich"
+            container: "debian_clang_mpich"
             MPIEXEC_PREFLAGS: ""
             CMAKE_BUILD_TYPE: Release
             DOCKER_OPTIONS: " "
@@ -115,46 +117,75 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[ci skip]')"
     steps:
       - name: Checkout htool-python
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: "true"
+
+      - name: Activate virtualenv
+        run: |
+          . /usr/local/share/venv/bin/activate
+          echo PATH=$PATH >> $GITHUB_ENV
 
       - name: Build package in release
         if: matrix.CODE_COVERAGE == 'OFF'
         run: |
-          pip3 install . --user
+          python3 -m pip install .[dev]
 
       - name: Build package in debug for coverage
         if: matrix.CODE_COVERAGE == 'ON'
         run: |
           mkdir build && cd build
-          pip3 install numpy scipy matplotlib
+          python3 -m pip install numpy matplotlib ruff pytest mpi4py scipy 
           CC=${{ matrix.CC_COMPILER }} CXX=${{ matrix.CXX_COMPILER }} cmake -DUSE_SANITIZER=${{ matrix.USE_SANITIZER }} -DCMAKE_BUILD_TYPE=${{ matrix.CMAKE_BUILD_TYPE }} -DCODE_COVERAGE=${{ matrix.CODE_COVERAGE }} ../
           make
 
       - name: Run tests
         run: |
           export PYTHONPATH="$PWD/build"
-          mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} pytest tests
-          mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} pytest tests
-          mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} pytest tests
+          mpirun -np 1 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
+          mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
+          mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
+          mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests
 
       - name: Check format
         if: matrix.CODE_COVERAGE == 'ON'
+        # https://github.com/actions/checkout/pull/762
         run: |
+          git config --global --add safe.directory `pwd` 
           cd build
           make format
           make cmake-format
           git diff --exit-code
 
+      - name: Check with ruff
+        run: |
+          ruff check example/ tests/
+
       - name: Generate coverage reports
         if: matrix.CODE_COVERAGE == 'ON'
         run: |
-          lcov --capture --base-directory ./ --directory build/ --output-file coverage.info
-          lcov --remove  coverage.info '/usr/*' '*/hpddm/*' '*/pybind11/*' '*/lib/htool/*' --output-file  coverage.info
+          lcov --ignore-errors mismatch --capture --base-directory ./ --directory build/ --output-file coverage.info
+          lcov --remove  coverage.info '/usr/*' '*/hpddm/*' '*/pybind11/*' '*/lib/htool/*' --output-file  ../coverage.info
 
-      - name: Upload coverage to Codecov
-        if: matrix.CODE_COVERAGE == 'ON'
-        uses: codecov/codecov-action@v2
+      - uses: actions/upload-artifact@v4
         with:
-          file: coverage.info
+          path: coverage.info
+          if-no-files-found: error
+        if: matrix.CODE_COVERAGE == 'ON'
+
+  coverage:
+    runs-on: ubuntu-latest
+    if: ${{ success() }}
+    needs: [ linux ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          file: ./coverage.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true

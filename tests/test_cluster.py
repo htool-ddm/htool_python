@@ -1,53 +1,36 @@
 import Htool
-import numpy as np
-from mpi4py import MPI
-import math
-import struct
-import os
+import matplotlib.pyplot as plt
+import mpi4py
+import pytest
 
 
-def test_cluster():
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
+@pytest.mark.parametrize(
+    "dimension,nb_rows,nb_cols,symmetry,is_partition_given",
+    [
+        (2, 500, 500, "N", False),
+        (3, 500, 500, "N", False),
+        (2, 500, 500, "N", True),
+        (3, 500, 500, "N", True),
+    ],
+)
+def test_cluster(geometry, cluster):
+    [target_points, _, _] = geometry
+    [target_cluster, _] = cluster
+    local_target_cluster = target_cluster.get_cluster_on_partition(
+        mpi4py.MPI.COMM_WORLD.Get_rank()
+    )
 
-    # Matrix
-    with open(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/matrix.bin"), "rb") as input:
-        data = input.read()
-        (m, n) = struct.unpack("@II", data[:8])
-        # print(m,n)
-        # A=np.frombuffer(data[8:],dtype=np.dtype('complex128'))
-        # A=np.transpose(A.reshape((m,n)))
+    total_size = 0
+    for p in range(0, mpi4py.MPI.COMM_WORLD.Get_size()):
+        total_size += target_cluster.get_cluster_on_partition(p).get_size()
 
-    # mesh
-    p = np.zeros((3, n))
-    with open(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/mesh.msh"), "r") as input:
-        check = False
-        count = 0
-        for line in input:
+    assert total_size == len(local_target_cluster.get_permutation())
+    assert total_size == len(target_cluster.get_permutation())
 
-            if line == "$EndNodes\n":
-                break
-
-            if check and len(line.split()) == 4:
-                tab_line = line.split()
-                p[0][count] = tab_line[1]
-                p[1][count] = tab_line[2]
-                p[2][count] = tab_line[3]
-                count += 1
-
-            if line == "$Nodes\n":
-                check = True
-
-    # Cluster read
-    cluster = Htool.PCARegularClustering(3)
-    cluster.read_cluster(os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/cluster_"+str(size)+"_permutation.csv"),
-                         os.path.join(os.path.dirname(__file__)+"/../lib/htool/data/data_test/non_symmetric/cluster_"+str(size)+"_tree.csv"))
-    cluster.display(p, 1, False)
-
-    # Cluster build
-    MasterOffset = cluster.get_masteroffset()
-    print(MasterOffset)
-    cluster_build = Htool.PCARegularClustering(3)
-    cluster_build.build(n, p, MasterOffset, 2)
-    cluster_build.display(p, 1, False)
+    # Several ways to display information
+    if mpi4py.MPI.COMM_WORLD.Get_rank() == 0:
+        _, ax = plt.subplots(2, 2)
+        Htool.plot(ax[0, 0], target_cluster, target_points, 1)
+        Htool.plot(ax[0, 1], target_cluster, target_points, 2)
+        Htool.plot(ax[1, 0], local_target_cluster, target_points, 1)
+        Htool.plot(ax[1, 1], local_target_cluster, target_points, 2)

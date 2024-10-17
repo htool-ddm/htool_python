@@ -1,6 +1,6 @@
 
-#ifndef HTOOL_WRAPPER_MPI_CPP
-#define HTOOL_WRAPPER_MPI_CPP
+#ifndef HTOOL_PYTHON_MISC_WRAPPER_MPI_CPP
+#define HTOOL_PYTHON_MISC_WRAPPER_MPI_CPP
 
 // https://stackoverflow.com/questions/49259704/pybind11-possible-to-use-mpi4py
 // https://stackoverflow.com/questions/52657173/sharing-an-mpi-communicator-using-pybind11

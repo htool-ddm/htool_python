@@ -1,32 +1,94 @@
-#include "cluster.hpp"
-#include "ddm_solver.hpp"
-#include "dense_blocks_generator.hpp"
-#include "hmatrix.hpp"
-#include "lrmat_generator.hpp"
-#include "matrix.hpp"
-#include "wrapper_mpi.hpp"
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+#include "clustering/cluster_builder.hpp"
+#include "clustering/cluster_node.hpp"
+#include "clustering/implementation/direction_computation.hpp"
+#include "clustering/implementation/splitting.hpp"
+#include "clustering/interface/direction_computation.hpp"
+#include "clustering/interface/splitting.hpp"
+#include "clustering/utility.hpp"
+
+#include "hmatrix/hmatrix.hpp"
+#include "hmatrix/hmatrix_builder.hpp"
+#include "hmatrix/interfaces/virtual_dense_blocks_generator.hpp"
+#include "hmatrix/interfaces/virtual_generator.hpp"
+#include "hmatrix/interfaces/virtual_low_rank_generator.hpp"
+
+#include "local_operator/local_operator.hpp"
+#include "local_operator/virtual_local_operator.hpp"
+
+#include "distributed_operator/distributed_operator.hpp"
+#include "distributed_operator/utility.hpp"
+
+#include "solver/geneo/coarse_operator_builder.hpp"
+// #include "solver/geneo/coarse_space_builder.hpp"
+#include "solver/geneo/coarse_space_dense_builder.hpp"
+#include "solver/interfaces/virtual_coarse_operator_builder.hpp"
+#include "solver/interfaces/virtual_coarse_space_builder.hpp"
+#include "solver/solver.hpp"
+#include "solver/utility.hpp"
+
+#include "matplotlib/cluster.hpp"
+#include "matplotlib/hmatrix.hpp"
+#include "misc/logger.hpp"
+#include "misc/wrapper_mpi.hpp"
 
 PYBIND11_MODULE(Htool, m) {
+    // Delegate logging to python logging module
+    htool::Logger::get_instance().set_current_writer(std::make_shared<PythonLoggerWriter>());
+
     // import the mpi4py API
     if (import_mpi4py() < 0) {
         throw std::runtime_error("Could not load mpi4py API."); // LCOV_EXCL_LINE
     }
 
-    declare_VirtualGenerator<double>(m, "VirtualGenerator");
-    declare_VirtualGenerator<std::complex<double>>(m, "ComplexVirtualGenerator");
+    declare_cluster_node<double>(m, "Cluster");
+    declare_cluster_builder<double>(m, "ClusterBuilder");
+    declare_cluster_utility<double>(m);
+    declare_interface_direction_computation<double>(m);
+    declare_compute_largest_extent<double>(m);
+    declare_compute_bounding_box<double>(m);
+    declare_interface_splitting<double>(m);
+    declare_regular_splitting<double>(m);
+    declare_geometric_splitting<double>(m);
 
-    py::class_<VirtualCluster, std::shared_ptr<VirtualCluster>>(m, "VirtualCluster");
-    declare_Cluster<Cluster<PCARegularClustering>>(m, "PCARegularClustering");
-    declare_Cluster<Cluster<PCAGeometricClustering>>(m, "PCAGeometricClustering");
-    declare_Cluster<Cluster<BoundingBox1RegularClustering>>(m, "BoundingBox1RegularClustering");
-    declare_Cluster<Cluster<BoundingBox1GeometricClustering>>(m, "BoundingBox1GeometricClustering");
+    declare_hmatrix_builder<double, double>(m, "HMatrixBuilder");
+    declare_HMatrix<double, double>(m, "HMatrix");
+    declare_virtual_generator<double>(m, "VirtualGenerator", "IGenerator");
+    declare_custom_VirtualLowRankGenerator<double>(m, "VirtualLowRankGenerator");
+    declare_custom_VirtualDenseBlocksGenerator<double>(m, "VirtualDenseBlocksGenerator");
 
-    declare_custom_VirtualLowRankGenerator<double>(m, "CustomLowRankGenerator");
-    declare_custom_VirtualDenseBlocksGenerator<double>(m, "CustomDenseBlocksGenerator");
+    declare_local_operator<double, double>(m, "LocalOperator");
+    declare_distributed_operator<double>(m, "DistributedOperator");
+    declare_distributed_operator_utility<double, double>(m);
 
-    declare_HMatrix<double>(m, "HMatrixVirtual", "HMatrix");
-    declare_HMatrix<std::complex<double>>(m, "ComplexHMatrixVirtual", "ComplexHMatrix");
+    declare_DDM<double>(m, "Solver");
+    declare_virtual_coarse_space_builder<double>(m, "VirtualCoarseSpaceBuilder", "ICoarseSpaceBuilder");
+    declare_virtual_coarse_operator_builder<double>(m, "", "ICoarseOperatorBuilder");
+    declare_geneo_coarse_operator_builder<double>(m, "GeneoCoarseOperatorBuilder");
+    declare_geneo_coarse_space_dense_builder<double>(m, "GeneoCoarseSpaceDenseBuilder");
+    declare_virtual_geneo_coarse_space_dense_builder<double>(m, "VirtualGeneoCoarseSpaceDenseBuilder");
+    declare_solver_utility<double, double>(m);
 
-    declare_DDM<double>(m, "DDM");
-    declare_DDM<std::complex<double>>(m, "ComplexDDM");
+    declare_matplotlib_cluster<double>(m);
+    declare_matplotlib_hmatrix<double, double>(m);
+
+    declare_hmatrix_builder<std::complex<double>, double>(m, "ComplexHMatrixBuilder");
+    declare_HMatrix<std::complex<double>, double>(m, "ComplexHMatrix");
+    declare_virtual_generator<std::complex<double>>(m, "ComplexVirtualGenerator", "IComplexGenerator");
+    declare_custom_VirtualLowRankGenerator<std::complex<double>>(m, "VirtualComplexLowRankGenerator");
+
+    declare_distributed_operator<std::complex<double>>(m, "ComplexDistributedOperator");
+    declare_distributed_operator_utility<std::complex<double>, double>(m, "Complex");
+
+    declare_DDM<std::complex<double>>(m, "ComplexSolver");
+    declare_virtual_coarse_space_builder<std::complex<double>>(m, "ComplexVirtualCoarseSpaceBuilder", "IComplexCoarseSpaceBuilder");
+    declare_virtual_coarse_operator_builder<std::complex<double>>(m, "", "IComplexCoarseOperatorBuilder");
+    declare_geneo_coarse_operator_builder<std::complex<double>>(m, "ComplexGeneoCoarseOperatorBuilder");
+    declare_geneo_coarse_space_dense_builder<std::complex<double>>(m, "ComplexGeneoCoarseSpaceDenseBuilder");
+    declare_virtual_geneo_coarse_space_dense_builder<std::complex<double>>(m, "VirtualComplexGeneoCoarseSpaceDenseBuilder");
+
+    declare_solver_utility<std::complex<double>, double>(m, "Complex");
 }
