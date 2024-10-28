@@ -22,7 +22,7 @@ void declare_solver_utility(py::module &m, std::string prefix = "") {
     ddm_solver_class.def_property_readonly(
         "solver", [](const DDMSolverBuilder &self) { return &self.solver; }, py::return_value_policy::reference_internal);
     ddm_solver_class.def_property_readonly("local_to_global_numbering", [](const DDMSolverBuilder &self) { return &self.local_to_global_numbering; }, py::return_value_policy::reference_internal);
-    ddm_solver_class.def_property_readonly(
-        "local_hmatrix", [](const DDMSolverBuilder &self) { return &*self.local_hmatrix; }, py::return_value_policy::reference_internal);
+    ddm_solver_class.def(
+        "get_local_hmatrix", [](const DDMSolverBuilder &self) { return *self.local_hmatrix.get(); });
 }
 #endif

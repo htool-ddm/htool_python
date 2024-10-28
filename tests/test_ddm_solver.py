@@ -1,4 +1,5 @@
 import copy
+import logging
 
 import Htool
 import mpi4py
@@ -191,6 +192,7 @@ def test_ddm_solver(
         ovr_subdomain_to_global,
         local_neumann_matrix,
     ] = load_data_solver
+    logging.basicConfig(level=logging.INFO)
 
     generator = GeneratorFromMatrix(A)
     default_approximation = Htool.ComplexDefaultApproximationBuilder(
@@ -203,6 +205,7 @@ def test_ddm_solver(
         UPLO,
         mpi4py.MPI.COMM_WORLD,
     )
+    Htool.recompression(default_approximation.hmatrix)
 
     solver = None
     default_solver_builder = None
@@ -241,6 +244,8 @@ def test_ddm_solver(
             Htool.ClusterBuilder(),
             Htool.ComplexHMatrixBuilder(epsilon, eta * 1.0, symmetry, UPLO),
         )
+        local_hmatrix = default_solver_builder.get_local_hmatrix()
+        Htool.recompression(local_hmatrix)
 
     solver = default_solver_builder.solver
     distributed_operator = default_approximation.distributed_operator
