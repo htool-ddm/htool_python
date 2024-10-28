@@ -16,10 +16,16 @@ class CustomSVD(Htool.VirtualLowRankGenerator):
 
         norm = np.linalg.norm(submat)
         svd_norm = 0
-        count = len(s) - 1
-        while count > 0 and math.sqrt(svd_norm) / norm < epsilon:
-            svd_norm += s[count] ** 2
-            count -= 1
-        count = min(count + 1, min(len(rows), len(cols)))
-        self.set_U(u[:, 0:count] * s[0:count])
-        self.set_V(vh[0:count, :])
+        truncated_rank = len(s) - 1
+        while truncated_rank > 0 and math.sqrt(svd_norm) / norm < epsilon:
+            svd_norm += s[truncated_rank] ** 2
+            truncated_rank -= 1
+        truncated_rank += 1
+
+        if truncated_rank * (len(rows) + len(cols)) > (len(rows) * len(cols)):
+            print("coucou")
+            return False  # the low rank approximation is not worthwhile
+
+        self.set_U(u[:, 0:truncated_rank] * s[0:truncated_rank])
+        self.set_V(vh[0:truncated_rank, :])
+        return True

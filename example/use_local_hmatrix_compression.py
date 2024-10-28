@@ -1,3 +1,5 @@
+import logging
+
 import Htool
 import matplotlib.pyplot as plt
 import mpi4py
@@ -5,6 +7,8 @@ import numpy as np
 from create_geometry import create_random_geometries
 from define_custom_generators import CustomGenerator
 from define_custom_local_operator import CustomLocalOperator
+
+logging.basicConfig(level=logging.INFO)
 
 # Random geometry
 target_size = 500
@@ -68,6 +72,8 @@ default_local_approximation = Htool.DefaultLocalApproximationBuilder(
     mpi4py.MPI.COMM_WORLD,
 )
 distributed_operator = default_local_approximation.distributed_operator
+hmatrix = default_local_approximation.hmatrix
+Htool.recompression(hmatrix)
 
 
 # Build off diagonal operators
@@ -114,9 +120,9 @@ if off_diagonal_nc_2 > 0:
         True,
     )
 
-if off_diagonal_nc_1 > 0:
+if local_operator_1:
     distributed_operator.add_local_operator(local_operator_1)
-if off_diagonal_nc_2 > 0:
+if local_operator_2:
     distributed_operator.add_local_operator(local_operator_2)
 
 # Test matrix vector product
@@ -135,7 +141,6 @@ Y_2 = generator.mat_mat(X)
 print(mpi4py.MPI.COMM_WORLD.rank, np.linalg.norm(Y_1 - Y_2) / np.linalg.norm(Y_2))
 
 # Several ways to display information
-hmatrix = default_local_approximation.hmatrix
 hmatrix_distributed_information = hmatrix.get_distributed_information(
     mpi4py.MPI.COMM_WORLD
 )

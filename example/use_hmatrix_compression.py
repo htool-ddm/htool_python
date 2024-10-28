@@ -1,9 +1,13 @@
+import logging
+
 import Htool
 import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
 from create_geometry import create_partitionned_geometries
 from define_custom_generators import CustomGenerator
+
+logging.basicConfig(level=logging.INFO)
 
 # Random geometry
 nb_rows = 500
@@ -47,6 +51,9 @@ default_approximation = Htool.DefaultApproximationBuilder(
 )
 
 distributed_operator = default_approximation.distributed_operator
+hmatrix = default_approximation.hmatrix
+Htool.openmp_recompression(hmatrix)
+
 
 # Test matrix vector product
 np.random.seed(0)
@@ -63,7 +70,6 @@ Y_2 = generator.mat_mat(X)
 print(mpi4py.MPI.COMM_WORLD.rank, np.linalg.norm(Y_1 - Y_2) / np.linalg.norm(Y_2))
 
 # Several ways to display information
-hmatrix = default_approximation.hmatrix
 hmatrix_distributed_information = hmatrix.get_distributed_information(
     mpi4py.MPI.COMM_WORLD
 )

@@ -15,6 +15,7 @@
 #include "hmatrix/interfaces/virtual_dense_blocks_generator.hpp"
 #include "hmatrix/interfaces/virtual_generator.hpp"
 #include "hmatrix/interfaces/virtual_low_rank_generator.hpp"
+#include "hmatrix/lrmat.hpp"
 
 #include "local_operator/local_operator.hpp"
 #include "local_operator/virtual_local_operator.hpp"
@@ -55,6 +56,7 @@ PYBIND11_MODULE(Htool, m) {
     declare_geometric_splitting<double>(m);
 
     declare_hmatrix_builder<double, double>(m, "HMatrixBuilder");
+    declare_LowRankMatrix<double>(m, "LowRankMatrix");
     declare_HMatrix<double, double>(m, "HMatrix");
     declare_virtual_generator<double>(m, "VirtualGenerator", "IGenerator");
     declare_custom_VirtualLowRankGenerator<double>(m, "VirtualLowRankGenerator");
@@ -77,6 +79,7 @@ PYBIND11_MODULE(Htool, m) {
 
     declare_hmatrix_builder<std::complex<double>, double>(m, "ComplexHMatrixBuilder");
     declare_HMatrix<std::complex<double>, double>(m, "ComplexHMatrix");
+    declare_LowRankMatrix<std::complex<double>>(m, "ComplexLowRankMatrix");
     declare_virtual_generator<std::complex<double>>(m, "ComplexVirtualGenerator", "IComplexGenerator");
     declare_custom_VirtualLowRankGenerator<std::complex<double>>(m, "VirtualComplexLowRankGenerator");
 

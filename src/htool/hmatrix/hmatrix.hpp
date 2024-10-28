@@ -1,6 +1,7 @@
 #ifndef HTOOL_HMATRIX_CPP
 #define HTOOL_HMATRIX_CPP
 
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -11,6 +12,7 @@
 #include <htool/hmatrix/hmatrix.hpp>
 #include <htool/hmatrix/hmatrix_distributed_output.hpp>
 #include <htool/hmatrix/hmatrix_output.hpp>
+#include <htool/hmatrix/utils/recompression.hpp>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -43,6 +45,11 @@ void declare_HMatrix(py::module &m, const std::string &className) {
     py_class.def("get_tree_parameters", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) { return htool::get_tree_parameters(hmatrix); });
     py_class.def("get_local_information", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) { return htool::get_hmatrix_information(hmatrix); });
     py_class.def("get_distributed_information", [](const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix, MPI_Comm_wrapper comm) { return htool::get_distributed_hmatrix_information(hmatrix, comm); });
+
+    m.def("recompression", &htool::recompression<CoefficientPrecision, CoordinatePrecision, std::function<void(LowRankMatrix<CoefficientPrecision> &)>>);
+    m.def("recompression", [](HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) { recompression(hmatrix); });
+    m.def("openmp_recompression", &htool::openmp_recompression<CoefficientPrecision, CoordinatePrecision, std::function<void(LowRankMatrix<CoefficientPrecision> &)>>);
+    m.def("openmp_recompression", [](HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) { recompression(hmatrix); });
 }
 
 #endif

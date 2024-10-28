@@ -1,4 +1,5 @@
 import copy
+import logging
 
 import Htool
 import matplotlib.pyplot as plt
@@ -6,6 +7,8 @@ import mpi4py
 import numpy as np
 from create_geometry import create_random_geometries
 from define_custom_generators import CustomGenerator
+
+logging.basicConfig(level=logging.INFO)
 
 # Random geometry
 size = 500
@@ -41,9 +44,14 @@ default_approximation = Htool.DefaultApproximationBuilder(
     "L",
     mpi4py.MPI.COMM_WORLD,
 )
+hmatrix = default_approximation.hmatrix
+Htool.recompression(hmatrix)
 
 # Solver with block Jacobi preconditionner
-block_diagonal_hmatrix = copy.deepcopy(default_approximation.block_diagonal_hmatrix)
+block_diagonal_hmatrix = copy.deepcopy(
+    default_approximation.block_diagonal_hmatrix
+)  # inplace factorization requires deepcopy
+
 default_solver_builder = Htool.DDMSolverBuilder(
     default_approximation.distributed_operator, block_diagonal_hmatrix
 )
@@ -64,7 +72,6 @@ solver.solve(x, b)
 
 
 # Several ways to display information
-hmatrix = default_approximation.hmatrix
 hmatrix_distributed_information = hmatrix.get_distributed_information(
     mpi4py.MPI.COMM_WORLD
 )

@@ -15,8 +15,6 @@ dimension = 3
 
 
 # Htool parameters
-eta = 10
-epsilon = 1e-3
 minclustersize = 10
 number_of_children = 2
 
@@ -42,7 +40,7 @@ local_operator = CustomLocalOperator(
     "N",
     "N",
     False,
-    True,
+    False,
 )
 
 # Build distributed operator

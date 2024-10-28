@@ -21,19 +21,29 @@ class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<Coefficient
 
     VirtualLowRankGeneratorPython() {}
 
-    void copy_low_rank_approximation(int M, int N, const int *const rows, const int *const cols, underlying_type<CoefficientPrecision> epsilon, int &rank, Matrix<CoefficientPrecision> &U, Matrix<CoefficientPrecision> &V) const override {
+    bool copy_low_rank_approximation(int M, int N, const int *const rows, const int *const cols, LowRankMatrix<CoefficientPrecision> &lrmat) const override {
+        auto &U = lrmat.get_U();
+        auto &V = lrmat.get_V();
         py::array_t<int> py_rows(std::array<long int, 1>{M}, rows, py::capsule(rows));
         py::array_t<int> py_cols(std::array<long int, 1>{N}, cols, py::capsule(cols));
 
-        build_low_rank_approximation(py_rows, py_cols, epsilon);
-        U.assign(m_mats_U.back().shape()[0], m_mats_U.back().shape()[1], m_mats_U.back().mutable_data(), false);
-        V.assign(m_mats_V.back().shape()[0], m_mats_V.back().shape()[1], m_mats_V.back().mutable_data(), false);
+        bool success = build_low_rank_approximation(py_rows, py_cols, lrmat.get_epsilon());
+        if (success) {
+            U.assign(m_mats_U.back().shape()[0], m_mats_U.back().shape()[1], m_mats_U.back().mutable_data(), false);
+            V.assign(m_mats_V.back().shape()[0], m_mats_V.back().shape()[1], m_mats_V.back().mutable_data(), false);
+        }
+        return success;
+    }
+
+    bool copy_low_rank_approximation(int M, int N, const int *const rows, const int *const cols, int reqrank, LowRankMatrix<CoefficientPrecision> &lrmat) const override {
+        Logger::get_instance().log(LogLevel::ERROR, "copy_low_rank_approximation with required rank is not implemented in the python interface.");
+        return false;
     }
 
     bool is_htool_owning_data() const override { return false; }
 
     // lcov does not see it because of trampoline I assume
-    virtual void build_low_rank_approximation(const py::array_t<int, py::array::f_style> &rows, const py::array_t<int, py::array::f_style> &cols, underlying_type<CoefficientPrecision> epsilon) const = 0; // LCOV_EXCL_LINE
+    virtual bool build_low_rank_approximation(const py::array_t<int, py::array::f_style> &rows, const py::array_t<int, py::array::f_style> &cols, underlying_type<CoefficientPrecision> epsilon) const = 0; // LCOV_EXCL_LINE
 
     void set_U(py::array_t<CoefficientPrecision, py::array::f_style> U0) {
         m_mats_U.push_back(U0); // no copy here
@@ -47,9 +57,9 @@ class PyVirtualLowRankGenerator : public VirtualLowRankGeneratorPython<Coefficie
     using VirtualLowRankGeneratorPython<CoefficientPrecision>::VirtualLowRankGeneratorPython;
 
     /* Trampoline (need one for each virtual function) */
-    virtual void build_low_rank_approximation(const py::array_t<int, py::array::f_style> &rows, const py::array_t<int, py::array::f_style> &cols, underlying_type<CoefficientPrecision> epsilon) const override {
+    virtual bool build_low_rank_approximation(const py::array_t<int, py::array::f_style> &rows, const py::array_t<int, py::array::f_style> &cols, underlying_type<CoefficientPrecision> epsilon) const override {
         PYBIND11_OVERRIDE_PURE(
-            void,                                                /* Return type */
+            bool,                                                /* Return type */
             VirtualLowRankGeneratorPython<CoefficientPrecision>, /* Parent class */
             build_low_rank_approximation,                        /* Name of function in C++ (must match Python name) */
             rows,

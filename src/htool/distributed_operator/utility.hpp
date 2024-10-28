@@ -27,8 +27,8 @@ void declare_distributed_operator_utility(py::module &m, std::string prefix = ""
     default_approximation_class.def(py::init<const VirtualGenerator<CoefficientPrecision> &, const Cluster<CoordinatePrecision> &, const Cluster<CoordinatePrecision> &, htool::underlying_type<CoefficientPrecision>, htool::underlying_type<CoefficientPrecision>, char, char, MPI_Comm_wrapper>());
     default_approximation_class.def_property_readonly(
         "distributed_operator", [](const DefaultApproximation &self) { return &self.distributed_operator; }, py::return_value_policy::reference_internal);
-    default_approximation_class.def_property_readonly(
-        "hmatrix", [](const DefaultApproximation &self) { return &self.hmatrix; }, py::return_value_policy::reference_internal);
+    default_approximation_class.def_property(
+        "hmatrix", [](const DefaultApproximation &self) { return &self.hmatrix; }, [](DefaultApproximation &self, const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) { self.hmatrix = hmatrix; });
     default_approximation_class.def_property_readonly(
         "block_diagonal_hmatrix", [](const DefaultApproximation &self) { return &*self.block_diagonal_hmatrix; }, py::return_value_policy::reference_internal);
 
@@ -36,8 +36,8 @@ void declare_distributed_operator_utility(py::module &m, std::string prefix = ""
     default_local_approximation_class.def(py::init<const VirtualGenerator<CoefficientPrecision> &, const Cluster<CoordinatePrecision> &, const Cluster<CoordinatePrecision> &, htool::underlying_type<CoefficientPrecision>, htool::underlying_type<CoefficientPrecision>, char, char, MPI_Comm_wrapper>());
     default_local_approximation_class.def_property_readonly(
         "distributed_operator", [](const LocalDefaultApproximation &self) { return &self.distributed_operator; }, py::return_value_policy::reference_internal);
-    default_local_approximation_class.def_property_readonly(
-        "hmatrix", [](const LocalDefaultApproximation &self) { return &self.hmatrix; }, py::return_value_policy::reference_internal);
+    default_local_approximation_class.def_readwrite(
+        "hmatrix", &LocalDefaultApproximation::hmatrix);
     default_local_approximation_class.def_property_readonly(
         "block_diagonal_hmatrix", [](const LocalDefaultApproximation &self) { return &*self.block_diagonal_hmatrix; }, py::return_value_policy::reference_internal);
 
@@ -45,8 +45,8 @@ void declare_distributed_operator_utility(py::module &m, std::string prefix = ""
     distributed_operator_from_hmatrix_class.def(py::init<const VirtualGenerator<CoefficientPrecision> &, const Cluster<CoordinatePrecision> &, const Cluster<CoordinatePrecision> &, const HMatrixTreeBuilder<CoefficientPrecision, CoordinatePrecision> &, MPI_Comm_wrapper>());
     distributed_operator_from_hmatrix_class.def_property_readonly(
         "distributed_operator", [](const DistributedOperatorFromHMatrix &self) { return &self.distributed_operator; }, py::return_value_policy::reference_internal);
-    distributed_operator_from_hmatrix_class.def_property_readonly(
-        "hmatrix", [](const DistributedOperatorFromHMatrix &self) { return &self.hmatrix; }, py::return_value_policy::reference_internal);
+    distributed_operator_from_hmatrix_class.def_readwrite(
+        "hmatrix", &DistributedOperatorFromHMatrix::hmatrix);
     distributed_operator_from_hmatrix_class.def_property_readonly(
         "block_diagonal_hmatrix", [](const DistributedOperatorFromHMatrix &self) { return &*self.block_diagonal_hmatrix; }, py::return_value_policy::reference_internal);
 }
