@@ -18,6 +18,7 @@ void declare_cluster_node(py::module &m, const std::string &className) {
 
     py_class.def("get_size", &Class::get_size);
     py_class.def("get_offset", &Class::get_offset);
+    py_class.def("get_minclustersize", &Class::get_minclustersize);
     py_class.def("get_permutation", [](const Class &self) {
         auto &permutation = self.get_permutation();
         return py::array_t<int>(std::array<std::size_t, 1>{permutation.size()}, permutation.data(), py::capsule(permutation.data()));
