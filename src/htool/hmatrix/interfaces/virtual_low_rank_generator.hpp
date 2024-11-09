@@ -40,8 +40,6 @@ class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<Coefficient
         return false;
     }
 
-    bool is_htool_owning_data() const override { return false; }
-
     // lcov does not see it because of trampoline I assume
     virtual bool build_low_rank_approximation(const py::array_t<int, py::array::f_style> &rows, const py::array_t<int, py::array::f_style> &cols, underlying_type<CoefficientPrecision> epsilon) const = 0; // LCOV_EXCL_LINE
 
@@ -49,6 +47,11 @@ class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<Coefficient
         m_mats_U.push_back(U0); // no copy here
     }
     void set_V(py::array_t<CoefficientPrecision, py::array::f_style> V0) { m_mats_V.push_back(V0); }
+
+    void clear_data(){
+        m_mats_U.clear();
+        m_mats_V.clear();
+    }
 };
 
 template <typename CoefficientPrecision>
@@ -76,6 +79,7 @@ void declare_custom_VirtualLowRankGenerator(py::module &m, const std::string &cl
     py_class.def("build_low_rank_approximation", &Class::build_low_rank_approximation);
     py_class.def("set_U", &Class::set_U);
     py_class.def("set_V", &Class::set_V);
+    py_class.def("clear_data", &Class::clear_data);
 }
 
 #endif
