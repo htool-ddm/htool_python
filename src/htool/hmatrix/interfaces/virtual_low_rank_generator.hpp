@@ -48,7 +48,7 @@ class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<Coefficient
     }
     void set_V(py::array_t<CoefficientPrecision, py::array::f_style> V0) { m_mats_V.push_back(V0); }
 
-    void clear_data(){
+    void clear_data() {
         m_mats_U.clear();
         m_mats_V.clear();
     }

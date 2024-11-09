@@ -26,9 +26,9 @@ class CustomGeneoCoarseSpaceDenseBuilder(
 
         if self.geneo_threshold > 0:
             nb_eig = (w > self.geneo_threshold).sum()
-            coarse_space = v[:, idx[0:nb_eig]]
+            coarse_space = v[:, idx[0:nb_eig]].real
         else:
-            coarse_space = v[:, idx[0 : self.geneo_nu]]
+            coarse_space = v[:, idx[0 : self.geneo_nu]].real
         self.set_coarse_space(coarse_space)
 
 
