@@ -3,6 +3,7 @@
 
 #include "htool/solvers/ddm.hpp"
 #include <pybind11/stl.h>
+#include <pybind11/iostream.h>
 #include <string>
 
 namespace py = pybind11;
@@ -48,7 +49,10 @@ void declare_DDM(py::module &m, const std::string &className) {
                 // LCOV_EXCL_STOP
             }
 
-            self.solve(b.data(), x.mutable_data(), mu);
+            {
+              py::scoped_ostream_redirect stream(std::cout, py::module_::import("sys").attr("stdout"));
+              self.solve(b.data(), x.mutable_data(), mu);
+            }
         },
         py::arg("x").noconvert(true),
         py::arg("b"),
