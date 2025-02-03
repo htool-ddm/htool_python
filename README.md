@@ -37,6 +37,12 @@ In the folder of this repository, do:
 pip install .
 ```
 
+In case you need to pass cmake variables, you can use
+
+```bash
+CMAKE_ARGS="-DCMAKE_VAR=VALUE1 -DCMAKE_VAR_2=VALUE2" pip install .
+```
+
 ### Embedding Htool in your code
 
 We mostly refer to `smallest_example.py` in the `examples` folder to see how to use Htool.
@@ -51,19 +57,18 @@ A function that generates the coefficients must be provided to Htool. To do so, 
 
 ## Who is behind Htool?
 
-If you need help or have questions regarding Htool, feel free to contact [Pierre Marchand](https://www.ljll.math.upmc.fr/marchandp/) and Pierre-Henri Tournier.
+If you need help or have questions regarding Htool, feel free to contact [Pierre Marchand](https://pmarchand.pages.math.cnrs.fr) and Pierre-Henri Tournier.
 
 ## Acknowledgements
 
-[ANR NonlocalDD](https://www.ljll.math.upmc.fr/~claeys/nonlocaldd/index.html), (grant ANR-15-CE23-0017-01), France  
+ANR NonlocalDD, (grant ANR-15-CE23-0017-01), France  
 [Inria](http://www.inria.fr/en/) Paris, France  
-[Laboratoire Jacques-Louis Lions](https://www.ljll.math.upmc.fr/en/) Paris, France  
+[Laboratoire Jacques-Louis Lions](https://www.ljll.fr) Paris, France  
 
 ## Collaborators/contributors
 
-[Matthieu Ancellin](https://ancell.in)  
-[Xavier Claeys](https://www.ljll.math.upmc.fr/~claeys/)  
-[Pierre Jolivet](http://jolivet.perso.enseeiht.fr/)  
-[Frédéric Nataf](https://www.ljll.math.upmc.fr/nataf/)
+[Xavier Claeys](https://claeys.pages.math.cnrs.fr)  
+[Pierre Jolivet](https://joliv.et)  
+[Frédéric Nataf](https://www.ljll.fr/nataf/)
 
 ![ANR NonlocalDD](figures/anr_nonlocaldd.png)

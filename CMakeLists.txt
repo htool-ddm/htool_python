@@ -54,15 +54,22 @@ find_package(OpenMP)
 
 # BLAS
 find_package(BLAS REQUIRED)
-message("-- Found Blas implementation:" "${BLAS_LIBRARIES}")
+message("-- Blas implementation:" "${BLAS_LIBRARIES}")
 
 # LAPACK
 find_package(LAPACK)
-message("-- Found Lapack:" "${LAPACK_LIBRARIES}")
+message("-- Lapack implementation:" "${LAPACK_LIBRARIES}")
+
+# MPI4PY
+find_package(
+    Python
+    COMPONENTS Interpreter Development
+    REQUIRED)
+message("-- Python executable:" "${Python_EXECUTABLE}")
 
 # MPI4PY
 find_package(MPI4PY REQUIRED)
-message("-- Found MPI4PY:" "${MPI4PY_INCLUDE_DIR}")
+message("-- MPI4PY include dir:" "${MPI4PY_INCLUDE_DIR}")
 
 add_subdirectory(lib/pybind11)
 

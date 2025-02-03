@@ -6,12 +6,15 @@
 
 # https://compacc.fnal.gov/projects/repositories/entry/synergia2/CMake/FindMPI4PY.cmake?rev=c147eafb60728606af4fe7b1b161a660df142e9a
 
-if(NOT PYTHON_EXECUTABLE)
-    set(PYTHON_EXECUTABLE "python3")
-endif(NOT PYTHON_EXECUTABLE)
-execute_process(COMMAND "which" "${PYTHON_EXECUTABLE}")
+if(NOT Python_EXECUTABLE)
+    find_package(
+        Python
+        COMPONENTS Interpreter Development
+        REQUIRED)
+endif(NOT Python_EXECUTABLE)
+execute_process(COMMAND "which" "${Python_EXECUTABLE}")
 execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" "-c" "import mpi4py; print(mpi4py.get_include())"
+    COMMAND "${Python_EXECUTABLE}" "-c" "import mpi4py; print(mpi4py.get_include())"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     OUTPUT_VARIABLE MPI4PY_INCLUDE_DIR
     RESULT_VARIABLE MPI4PY_COMMAND_RESULT

@@ -17,7 +17,7 @@ keywords = [
     "hierarchical matrix",
     "domain decomposition method",
 ]
-dependencies = ["mpi4py", "numpy"]
+dependencies = ["mpi4py>=4.0.0", "numpy"]
 
 
 [project.optional-dependencies]
