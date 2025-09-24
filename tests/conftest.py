@@ -268,6 +268,17 @@ def local_operator(request, generator, cluster, geometry):
                     False,
                 )
             )
+            assert (
+                result[1][-1].local_target_renumbering.size
+                == target_local_cluster.get_size()
+            )
+            assert (
+                result[1][-1].local_source_renumbering.size
+                == source_cluster.get_size()
+                - source_local_cluster.get_size()
+                - source_local_cluster.get_offset()
+            )
+
         if request.param == "LocalAndExtraDiagonal":
             result[0] = "LocalAndExtraDiagonal"
             result[1].append(
@@ -277,7 +288,6 @@ def local_operator(request, generator, cluster, geometry):
                     Htool.LocalRenumbering(source_local_cluster),
                 )
             )
-
         return result
     else:
         return None

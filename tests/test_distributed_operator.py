@@ -96,6 +96,11 @@ def test_distributed_operator(
     Y_2 = generator.mat_mat(X)
     assert np.linalg.norm(Y_1 - Y_2) / np.linalg.norm(Y_2) < epsilon
 
+    X = np.asfortranarray(np.random.rand(nb_cols, 1))
+    Y_1 = distributed_operator @ X
+    Y_2 = generator.mat_mat(X)
+    assert np.linalg.norm(Y_1 - Y_2) / np.linalg.norm(Y_2) < epsilon
+
     # Test sub matrix vector product
     test_offset = int(nb_cols / 10)
     test_size = int(nb_cols / 10)

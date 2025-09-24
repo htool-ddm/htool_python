@@ -5,8 +5,6 @@ name: CI
 # Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -137,10 +135,18 @@ jobs:
       - name: Run tests
         run: |
           export PYTHONPATH="$PWD/build"
-          mpirun -np 1 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests --ignore=tests/test_hmatrix.py --ignore=tests/test_logger.py
-          mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests --ignore=tests/test_hmatrix.py --ignore=tests/test_logger.py
-          mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests --ignore=tests/test_hmatrix.py --ignore=tests/test_logger.py
-          mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests --ignore=tests/test_hmatrix.py --ignore=tests/test_logger.py
+          mpirun -np 1 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_cluster.py
+          mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_cluster.py
+          mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_cluster.py
+          mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_cluster.py
+          mpirun -np 1 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_distributed_operator.py
+          mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_distributed_operator.py
+          mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_distributed_operator.py
+          mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_distributed_operator.py
+          mpirun -np 1 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_ddm_solver.py
+          mpirun -np 2 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_ddm_solver.py
+          mpirun -np 3 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_ddm_solver.py
+          mpirun -np 4 ${{ matrix.MPIEXEC_PREFLAGS }} python3 -m pytest tests/test_ddm_solver.py
           python3 -m pytest tests/test_hmatrix.py
           python3 -m pytest tests/test_logger.py
 
@@ -161,8 +167,18 @@ jobs:
       - name: Generate coverage reports
         if: matrix.CODE_COVERAGE == 'ON'
         run: |
-          lcov --ignore-errors mismatch --capture --base-directory ./ --directory build/ --output-file coverage.info
-          lcov --remove  coverage.info '/usr/*' '*/hpddm/*' '*/pybind11/*' '*/lib/htool/*' --output-file  ../coverage.info
+          # Capture coverage: both MPI (.gcda in /tmp/gcov-mpi) and serial (.gcda in build/)
+          lcov --ignore-errors mismatch \
+               --capture \
+               --base-directory $(pwd) \
+               --directory build \
+               --output-file coverage.info
+
+          # Exclude third-party and system paths
+          lcov --remove coverage.info '/usr/*' '*/hpddm/*' '*/pybind11/*' '*/lib/htool/*' --output-file filtered.info
+
+          # Convert absolute paths to relative paths for Codecov
+          lcov --extract filtered.info "${PWD}/src/*" --output-file coverage.info
 
       - uses: actions/upload-artifact@v4
         with:
@@ -180,9 +196,9 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
       - name: Upload coverage report
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
-          file: ./coverage.info
+          files: ./coverage.info
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true

@@ -29,13 +29,11 @@ class PythonLoggerWriter : public htool::IObjectWriter {
         case htool::LogLevel::INFO:
             logger.attr("info")(message);
             break;
-        default:
-            break;
         }
     }
-
-    void set_log_level(htool::LogLevel log_level) override {
-    }
+    // LCOV_EXCL_START
+    void set_log_level(htool::LogLevel log_level) override {}
+    // LCOV_EXCL_STOP
 };
 
 #endif
