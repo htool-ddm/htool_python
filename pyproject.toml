@@ -1,6 +1,6 @@
 [project]
 name = "htool"
-version = "0.1"
+version = "1.0.0"
 authors = [{ name = "Pierre Marchand", email = "test@test.com" }]
 description = "CLI utility to automate asciinema"
 readme = "README.md"

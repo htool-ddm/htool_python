@@ -192,10 +192,10 @@ class CMakeBuild(build_ext):
 
 setup(
     name="Htool",
-    version="0.9.0",
+    version="1.0.0",
     author="Pierre Marchand",
     author_email="",
-    description="""A pybind11 interface to Htool.""",
+    description="""A pybind11 interface to Htool-DDM.""",
     long_description="",
     ext_modules=[CMakeExtension("Htool")],
     cmdclass=dict(build_ext=CMakeBuild),
