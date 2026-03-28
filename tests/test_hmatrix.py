@@ -1,20 +1,27 @@
 import copy
 import logging
 
-import Htool
 import numpy as np
 import pytest
 
+import Htool
 from example.advanced.define_custom_low_rank_generator import CustomSVD
 from example.create_geometry import create_random_geometries
 from example.define_generators import CustomGenerator
 
 
 @pytest.mark.parametrize(
-    "loglevel",
-    [logging.INFO, logging.DEBUG, logging.WARNING, logging.ERROR, logging.CRITICAL],
+    "loglevel,symmetry",
+    [
+        (logging.INFO, "N"),
+        (logging.DEBUG, "N"),
+        (logging.WARNING, "N"),
+        (logging.ERROR, "N"),
+        (logging.CRITICAL, "N"),
+        (logging.INFO, "S"),
+    ],
 )
-def test_hmatrix(loglevel):
+def test_hmatrix(loglevel, symmetry):
     logging.basicConfig(level=loglevel)
 
     # Random geometry
@@ -37,12 +44,18 @@ def test_hmatrix(loglevel):
         target_points,
         number_of_children,
     )
-    source_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
-        source_points, number_of_children
-    )
+    if symmetry == "N":
+        source_cluster: Htool.Cluster = cluster_builder.create_cluster_tree(
+            source_points, number_of_children
+        )
+    else:
+        source_cluster = target_cluster
 
     # Build generator
-    generator = CustomGenerator(target_points, source_points)
+    if symmetry == "N":
+        generator = CustomGenerator(target_points, source_points)
+    else:
+        generator = CustomGenerator(target_points, target_points)
 
     # Custom low rank generator
     low_rank_generator = CustomSVD(generator, False)
@@ -64,10 +77,55 @@ def test_hmatrix(loglevel):
     np.random.seed(0)
     x = np.random.rand(nb_cols)
     y = hmatrix * x
+    y_exact = generator.mat_vec(x)
     y_dense = dense_in_user_numbering.dot(x)
     y_copy = copy_hmatrix * x
-    assert np.linalg.norm(y - y_dense) / np.linalg.norm(y_dense) < epsilon
+    assert np.linalg.norm(y - y_exact) / np.linalg.norm(y_exact) < epsilon
+    assert np.linalg.norm(y - y_dense) / np.linalg.norm(y_dense) < 1e-10
     assert np.linalg.norm(y - y_copy) < 1e-10
+
+    # HMatrix matrix product
+    np.random.seed(0)
+    x = np.random.rand(nb_cols, 2)
+    y = hmatrix @ x
+    y_exact = generator.mat_mat(x)
+    y_dense = dense_in_user_numbering @ x
+    y_copy = copy_hmatrix @ x
+    assert np.linalg.norm(y - y_exact) / np.linalg.norm(y_exact) < epsilon
+    assert np.linalg.norm(y - y_dense) / np.linalg.norm(y_dense) < 1e-10
+    assert np.linalg.norm(y - y_copy) < 1e-10
+
+    if symmetry != "N":
+        # HLU factorization
+        copy_hmatrix.lu_factorization()
+
+        # HLU solve vec
+        x_ref = np.ones(nb_cols)
+        y = hmatrix * x_ref
+        x = copy_hmatrix.lu_solve("N", y)
+        assert np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref) < epsilon
+
+        # HLU solve mat
+        x_ref = np.ones((nb_cols, 2))
+        y = hmatrix @ x_ref
+        x = copy_hmatrix.lu_solve("N", y)
+        assert np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref) < epsilon
+
+        # Cholesky factorization
+        copy_hmatrix = copy.deepcopy(hmatrix)
+        copy_hmatrix.cholesky_factorization("L")
+
+        # Cholesky solve vec
+        x_ref = np.ones(nb_cols)
+        y = hmatrix * x_ref
+        x = copy_hmatrix.cholesky_solve("L", y)
+        assert np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref) < epsilon
+
+        # Cholesky solve mat
+        x_ref = np.ones((nb_cols, 2))
+        y = hmatrix @ x_ref
+        x = copy_hmatrix.cholesky_solve("L", y)
+        assert np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref) < epsilon
 
     # Output
     hmatrix_tree_parameter = hmatrix.get_tree_parameters()

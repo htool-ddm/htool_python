@@ -1,13 +1,14 @@
 import copy
 import logging
 
-import Htool
 import mpi4py
 import numpy as np
 import pytest
 from conftest import ComplexGeneratorFromMatrix, GeneratorFromMatrix
 from scipy.linalg import eig, eigh, ldl, solve_triangular
 from scipy.sparse.linalg import LinearOperator, eigsh
+
+import Htool
 
 
 class CustomDenseGeneoCoarseSpaceDenseBuilder(

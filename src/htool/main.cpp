@@ -84,6 +84,7 @@ PYBIND11_MODULE(Htool, m) {
 
     declare_matplotlib_cluster<double>(m);
     declare_matplotlib_hmatrix<double, double>(m);
+    declare_matplotlib_hmatrix<std::complex<double>, double>(m);
 
     declare_virtual_partitioning<std::complex<double>>(m, "Complex");
     declare_LowRankMatrix<std::complex<double>>(m, "ComplexLowRankMatrix");

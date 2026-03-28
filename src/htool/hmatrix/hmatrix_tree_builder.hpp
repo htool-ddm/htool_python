@@ -40,5 +40,6 @@ void declare_hmatrix_builder(py::module &m, const std::string &className) {
     py_class.def("set_minimal_target_depth", &Class::set_minimal_target_depth);
     py_class.def("set_low_rank_generator", [](Class &self, std::shared_ptr<VirtualLowRankGeneratorPython<CoefficientPrecision>> low_rank_generator) { self.set_low_rank_generator(low_rank_generator); });
     py_class.def("set_dense_blocks_generator", [](Class &self, std::shared_ptr<VirtualDenseBlocksGeneratorPython<CoefficientPrecision>> dense_blocks_generator) { self.set_dense_blocks_generator(dense_blocks_generator); });
+    py_class.def("set_block_tree_consistency", [](Class &self, bool consistency) { self.set_block_tree_consistency(consistency); });
 }
 #endif

@@ -1,10 +1,11 @@
 import logging
 
-import Htool
 import matplotlib.pyplot as plt
 import numpy as np
 from create_geometry import create_random_points_in_disk, create_random_points_in_sphere
 from define_generators import CustomGenerator
+
+import Htool
 
 logging.basicConfig(level=logging.INFO)
 
@@ -44,11 +45,17 @@ hmatrix: Htool.HMatrix = hmatrix_builder.build(
 )
 
 # HMatrix vector product
-dense_in_user_numbering = hmatrix.to_dense_in_user_numbering()
 np.random.seed(0)
 x = np.random.rand(size)
-y = generator.mat_vec(x)
-y_dense = dense_in_user_numbering.dot(x)
+y_dense = generator.mat_vec(x)
+y = hmatrix * x
+print(np.linalg.norm(y - y_dense) / np.linalg.norm(y_dense), epsilon)
+
+# HMatrix matrix product
+np.random.seed(0)
+x = np.random.rand(size, 2)
+y_dense = generator.mat_mat(x)
+y = hmatrix @ x
 print(np.linalg.norm(y - y_dense) / np.linalg.norm(y_dense), epsilon)
 
 
