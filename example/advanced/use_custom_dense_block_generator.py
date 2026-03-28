@@ -2,11 +2,12 @@ import logging
 import os
 import sys
 
-import Htool
 import mpi4py
 import numpy as np
 from define_custom_dense_blocks_generator import CustomDenseBlocksGenerator
 from matplotlib import pyplot as plt
+
+import Htool
 
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

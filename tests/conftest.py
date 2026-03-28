@@ -2,11 +2,11 @@ import os
 import pathlib
 import struct
 
-import Htool
 import mpi4py
 import numpy as np
 import pytest
 
+import Htool
 from example.advanced.define_custom_dense_blocks_generator import (
     CustomDenseBlocksGenerator,
 )

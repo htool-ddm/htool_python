@@ -47,6 +47,8 @@ ignore = []
 fixable = ["ALL"]
 unfixable = []
 
+[tool.ruff.lint.isort]
+known-first-party = ["Htool"]
 
 [build-system]
 requires = [

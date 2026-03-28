@@ -1,6 +1,7 @@
-import Htool
 import matplotlib.pyplot as plt
 from create_geometry import create_random_geometries
+
+import Htool
 
 # Random geometry
 nb_rows = 500

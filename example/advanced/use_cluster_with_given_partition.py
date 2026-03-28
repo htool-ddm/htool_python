@@ -1,10 +1,11 @@
 import os
 import sys
 
-import Htool
 import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
+
+import Htool
 
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

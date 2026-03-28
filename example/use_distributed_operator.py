@@ -1,11 +1,12 @@
 import logging
 
-import Htool
 import matplotlib.pyplot as plt
 import mpi4py
 import numpy as np
 from create_geometry import create_partitionned_geometries
 from define_generators import CustomGenerator
+
+import Htool
 
 logging.basicConfig(level=logging.INFO)
 

@@ -1,5 +1,6 @@
-import Htool
 import numpy as np
+
+import Htool
 
 
 class CustomGenerator(Htool.VirtualGenerator):

@@ -1,10 +1,11 @@
 import os
 import sys
 
-import Htool
 import mpi4py
 import numpy as np
 from define_custom_local_operator import CustomRestrictedGlobalToLocalOperator
+
+import Htool
 
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))

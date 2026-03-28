@@ -161,8 +161,10 @@ jobs:
           git diff --exit-code
 
       - name: Check with ruff
-        run: |
-          ruff check example/ tests/
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.15.8"
+          args: "check ./example ./tests"
 
       - name: Generate coverage reports
         if: matrix.CODE_COVERAGE == 'ON'
