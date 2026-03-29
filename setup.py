@@ -191,7 +191,7 @@ class CMakeBuild(build_ext):
 
 
 setup(
-    ext_modules=[CMakeExtension("Htool-DDM")],
+    ext_modules=[CMakeExtension("Htool")],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
     package_data={"": ["*.pyi"]},

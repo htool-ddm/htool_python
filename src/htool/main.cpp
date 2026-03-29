@@ -8,6 +8,7 @@
 #include "clustering/interface/virtual_partitioning.hpp"
 #include "clustering/utility.hpp"
 
+#include "hmatrix/execution_policies.hpp"
 #include "hmatrix/hmatrix.hpp"
 #include "hmatrix/hmatrix_tree_builder.hpp"
 #include "hmatrix/interfaces/virtual_dense_blocks_generator.hpp"
@@ -58,11 +59,15 @@ PYBIND11_MODULE(Htool, m) {
     declare_cluster_builder<double>(m, "ClusterTreeBuilder");
     declare_cluster_utility<double>(m);
 
-    declare_virtual_generator<double>(m, "VirtualGenerator", "IGenerator");
+    declare_virtual_generator<double>(m, "");
     declare_LowRankMatrix<double>(m, "LowRankMatrix");
     declare_HMatrix<double, double>(m, "HMatrix");
     declare_custom_VirtualLowRankGenerator<double>(m, "VirtualLowRankGenerator");
     declare_custom_VirtualDenseBlocksGenerator<double>(m, "VirtualDenseBlocksGenerator");
+    declare_standard_policies(m);
+#ifdef _OPENMP
+    declare_omp_task_policy<double, double>(m);
+#endif
     declare_hmatrix_builder<double, double>(m, "HMatrixTreeBuilder");
 
 #ifdef HAVE_MPI
@@ -89,9 +94,12 @@ PYBIND11_MODULE(Htool, m) {
     declare_virtual_partitioning<std::complex<double>>(m, "Complex");
     declare_LowRankMatrix<std::complex<double>>(m, "ComplexLowRankMatrix");
     declare_HMatrix<std::complex<double>, double>(m, "ComplexHMatrix");
-    declare_virtual_generator<std::complex<double>>(m, "ComplexVirtualGenerator", "IComplexGenerator");
+    declare_virtual_generator<std::complex<double>>(m, "Complex");
     declare_custom_VirtualLowRankGenerator<std::complex<double>>(m, "VirtualComplexLowRankGenerator");
     declare_custom_VirtualDenseBlocksGenerator<std::complex<double>>(m, "ComplexVirtualDenseBlocksGenerator");
+#ifdef _OPENMP
+    declare_omp_task_policy<std::complex<double>, double>(m, "Complex");
+#endif
     declare_hmatrix_builder<std::complex<double>, double>(m, "ComplexHMatrixTreeBuilder");
 
 #ifdef HAVE_MPI

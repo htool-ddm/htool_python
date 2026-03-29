@@ -7,7 +7,7 @@
 
 template <typename CoefficientPrecision, typename CoordinatePrecision>
 void declare_matplotlib_hmatrix(py::module &m) {
-    m.def("plot", [](py::object axes, const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
+    m.def("plot", [](py::object axes, const HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix, py::object L0) {
         std::vector<int> buf;
         int nb_leaves = 0;
         htool::preorder_tree_traversal(
@@ -24,31 +24,25 @@ void declare_matplotlib_hmatrix(py::module &m) {
             });
 
         // Import
-        py::object plt     = py::module::import("matplotlib.pyplot");
-        py::object patches = py::module::import("matplotlib.patches");
-        py::object colors  = py::module::import("matplotlib.colors");
-        py::object numpy   = py::module::import("numpy");
+        py::object plt         = py::module::import("matplotlib.pyplot");
+        py::object patches     = py::module::import("matplotlib.patches");
+        py::object collections = py::module::import("matplotlib.collections");
+        py::object colors      = py::module::import("matplotlib.colors");
+        py::object numpy       = py::module::import("numpy");
+
+        // Colormap
+        py::object cmap     = plt.attr("get_cmap")("YlGn");
+        py::object new_cmap = colors.attr("LinearSegmentedColormap").attr("from_list")("trunc(YlGn,0.4,1)", cmap(numpy.attr("linspace")(0.4, 1, 100)));
+        py::object norm     = colors.attr("Normalize")("vmin"_a = 0, "vmax"_a = 10);
 
         // First Data
         int nr = hmatrix.get_target_cluster().get_size();
         int nc = hmatrix.get_source_cluster().get_size();
-        py::array_t<int> matrix({nr, nc});
-        py::array_t<bool> mask_matrix({nr, nc});
-        matrix.attr("fill")(0);
-        mask_matrix.attr("fill")(false);
 
-        // Figure
-        // py::tuple sublots_output = plt.attr("subplots")(1, 1);
-        // py::object fig           = sublots_output[0];
-        // py::object axes          = sublots_output[1];
-        // axes.attr()
+        // Storage for rectangles and colors
+        py::list rects;
+        py::list facecolors;
 
-        // Issue: there a shift of one pixel along the y-axis...
-        // int shift = axes.transData.transform([(0,0), (1,1)])
-        // shift = shift[1,1] - shift[0,1]  # 1 unit in display coords
-        int shift = 0;
-
-        int max_rank = 0;
         for (int p = 0; p < nb_leaves; p++) {
             int i_row  = buf[5 * p];
             int nb_row = buf[5 * p + 1];
@@ -56,37 +50,91 @@ void declare_matplotlib_hmatrix(py::module &m) {
             int nb_col = buf[5 * p + 3];
             int rank   = buf[5 * p + 4];
 
-            if (rank > max_rank) {
-                max_rank = rank;
-            }
-            for (int i = 0; i < nb_row; i++) {
-                for (int j = 0; j < nb_col; j++) {
-                    matrix.mutable_at(i_row + i, i_col + j) = rank;
-                    if (rank == -1) {
-                        mask_matrix.mutable_at(i_row + i, i_col + j) = true;
-                    }
-                }
+            // Color selection
+            py::object facecolor;
+            if (rank == -1) {
+                facecolors.append(py::str("red")); // full blocks
+            } else {
+                facecolors.append(new_cmap(norm(rank)));
             }
 
-            py::object rect = patches.attr("Rectangle")(py::make_tuple(i_col - 0.5, i_row - 0.5 + shift), nb_col, nb_row, "linewidth"_a = 0.75, "edgecolor"_a = 'k', "facecolor"_a = "none");
-            axes.attr("add_patch")(rect);
+            // Rectangle (no styling here!)
+            py::object rect = patches.attr("Rectangle")(
+                py::make_tuple(i_col, i_row),
+                nb_col,
+                nb_row);
+            rects.append(rect);
 
-            if (rank >= 0 && nb_col / double(nc) > 0.05 && nb_row / double(nc) > 0.05) {
-                axes.attr("annotate")(rank, py::make_tuple(i_col + nb_col / 2., i_row + nb_row / 2.), "color"_a = "white", "size"_a = 10, "va"_a = "center", "ha"_a = "center");
+            // Optional: annotate only large blocks
+            if (rank >= 0 && nb_col > nc * 0.05 && nb_row > nr * 0.05) {
+                axes.attr("text")(
+                    i_col + nb_col / 2.0,
+                    i_row + nb_row / 2.0,
+                    rank,
+                    "color"_a    = "white",
+                    "ha"_a       = "center",
+                    "va"_a       = "center",
+                    "fontsize"_a = 8);
             }
         }
 
-        // Colormap
-        py::object cmap     = plt.attr("get_cmap")("YlGn");
-        py::object new_cmap = colors.attr("LinearSegmentedColormap").attr("from_list")("trunc(YlGn,0.4,1)", cmap(numpy.attr("linspace")(0.4, 1, 100)));
+        // Create PatchCollection
+        py::object collection = collections.attr("PatchCollection")(
+            rects,
+            "facecolor"_a = facecolors,
+            "edgecolor"_a = "black", // huge speedup
+            "linewidth"_a = 0.2);
 
-        // Plot
-        py::object masked_matrix = numpy.attr("ma").attr("array")(matrix, "mask"_a = mask_matrix);
-        new_cmap.attr("set_bad")("color"_a = "red");
+        axes.attr("add_collection")(collection);
 
-        axes.attr("imshow")(masked_matrix, "cmap"_a = new_cmap, "vmin"_a = 0, "vmax"_a = 10);
-        // plt.attr("draw")();
-    });
+        // Axes formatting
+        axes.attr("set_xlim")(0, nc);
+        axes.attr("set_ylim")(nr, 0); // invert y-axis (matrix style)
+        axes.attr("set_aspect")("equal");
+
+        // Optional: remove ticks for speed
+        axes.attr("set_xticks")(py::list());
+        axes.attr("set_yticks")(py::list());
+
+        if (!L0.is_none()) {
+            py::list L0_rects;
+
+            for (py::handle item : L0) {
+                const HMatrix<CoefficientPrecision,CoordinatePrecision> &block =
+                    item.cast<const HMatrix<CoefficientPrecision,CoordinatePrecision> &>();
+
+                const int i_row =
+                    block.get_target_cluster().get_offset()
+                    - hmatrix.get_target_cluster().get_offset();
+
+                const int nb_row =
+                    block.get_target_cluster().get_size();
+
+                const int i_col =
+                    block.get_source_cluster().get_offset()
+                    - hmatrix.get_source_cluster().get_offset();
+
+                const int nb_col =
+                    block.get_source_cluster().get_size();
+
+                py::object rect =
+                    patches.attr("Rectangle")(
+                        py::make_tuple(i_col, i_row),
+                        nb_col,
+                        nb_row);
+
+                L0_rects.append(rect);
+            }
+
+            py::object L0_collection =
+                collections.attr("PatchCollection")(
+                    L0_rects,
+                    "facecolor"_a = "none",
+                    "edgecolor"_a = "purple",
+                    "linewidth"_a = 1.5);
+
+            axes.attr("add_collection")(L0_collection);
+        } }, py::arg("axes"), py::arg("hmatrix"), py::arg("L0") = py::none());
 }
 
 #endif

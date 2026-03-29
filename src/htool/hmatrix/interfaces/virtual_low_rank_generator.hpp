@@ -23,11 +23,11 @@ class VirtualLowRankGeneratorPython : public VirtualLowRankGenerator<Coefficient
     VirtualLowRankGeneratorPython(bool allow_copy = true) : VirtualLowRankGenerator<CoefficientPrecision>(), m_allow_copy(allow_copy) {}
 
     bool copy_low_rank_approximation(int M, int N, const int *const rows, const int *const cols, LowRankMatrix<CoefficientPrecision> &lrmat) const override {
+        py::gil_scoped_acquire acquire;
         auto &U = lrmat.get_U();
         auto &V = lrmat.get_V();
         py::array_t<int> py_rows(std::array<long int, 1>{M}, rows, py::capsule(rows));
         py::array_t<int> py_cols(std::array<long int, 1>{N}, cols, py::capsule(cols));
-
         bool success = build_low_rank_approximation(py_rows, py_cols, lrmat.get_epsilon());
         if (success) {
             if (m_allow_copy) {
