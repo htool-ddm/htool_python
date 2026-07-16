@@ -99,6 +99,8 @@ jobs:
     permissions:
       contents: write   # needed to create a release
     steps:
+      - uses: actions/checkout@v7
+      
       - name: Retrieve release distributions
         uses: actions/download-artifact@v4
         with:
