@@ -1,0 +1,8 @@
+include CMakeLists.txt
+recursive-include cmake *
+recursive-include cmake_modules *
+recursive-include src *
+recursive-include lib *
+prune lib/htool_generate_data_test
+global-exclude *.pyc
+prune **/__pycache__
