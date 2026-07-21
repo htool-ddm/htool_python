@@ -50,6 +50,7 @@ if(MPI_FOUND)
     message("-- MPI include files found in " "${MPI_INCLUDE_PATH}")
     separate_arguments(MPIEXEC_PREFLAGS) # to support multi flags
 endif()
+
 # OPENMP
 find_package(OpenMP)
 
@@ -83,7 +84,10 @@ if(MPI_FOUND)
     target_include_directories(Htool PRIVATE ${MPI_INCLUDE_PATH} ${MPI4PY_INCLUDE_DIR})
     target_compile_definitions(Htool PRIVATE HAVE_MPI)
 endif()
-target_link_libraries(Htool PRIVATE ${MPI_LIBRARIES} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} ${ARPACK_LIBRARIES} ${OpenMP_CXX_LIBRARIES})
+target_link_libraries(Htool PRIVATE ${MPI_LIBRARIES} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} ${ARPACK_LIBRARIES})
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(Htool PRIVATE OpenMP::OpenMP_CXX)
+endif()
 
 if("${BLA_VENDOR}" STREQUAL "Intel10_32"
    OR "${BLA_VENDOR}" STREQUAL "Intel10_64lp"
@@ -94,7 +98,7 @@ if("${BLA_VENDOR}" STREQUAL "Intel10_32"
     target_compile_definitions(Htool PRIVATE "-DHPDDM_MKL -DHTOOL_MKL")
 endif()
 
-target_compile_definitions(Htool PRIVATE "-DHTOOL_WITH_PYTHON_INTERFACE" "-DHTOOL_WITH_HPDDM")
+target_compile_definitions(Htool PRIVATE "-DHTOOL_WITH_HPDDM")
 
 if(CODE_COVERAGE)
     if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")

@@ -2,7 +2,7 @@
 name = "Htool-DDM"
 version = "1.0.1rc2"
 authors = [{ name = "Pierre Marchand", email = "test@test.com" }]
-description = "CLI utility to automate asciinema"
+description = "Pybind11 interface for Htool-DDM"
 readme = "README.md"
 requires-python = ">=3.7"
 license = "MIT"
@@ -24,7 +24,8 @@ dev = ["ruff", "matplotlib>=3.0.0", "pytest", "scipy", "pybind11-stubgen"]
 
 
 [project.urls]
-"Homepage" = "https://github.com/htool-ddm/htool_python"
+"Homepage" = "https://htool-ddm.pages.math.cnrs.fr"
+"Source code" = "https://github.com/htool-ddm/htool_python"
 "Bug Tracker" = "https://github.com/htool-ddm/htool_python/issues"
 
 [tool.ruff]

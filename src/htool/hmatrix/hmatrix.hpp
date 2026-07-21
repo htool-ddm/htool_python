@@ -56,11 +56,33 @@ void declare_HMatrix(py::module &m, const std::string &className) {
     py_class.def("get_source_cluster", &HMatrix<CoefficientPrecision, CoordinatePrecision>::get_source_cluster, py::return_value_policy::reference_internal);
 
     py_class.def("lu_factorization", [](HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
-        htool::lu_factorization(hmatrix);
+        htool::lu_factorization(exec_compat::par, hmatrix);
     });
+    py_class.def("lu_factorization", [](exec_compat::sequenced_policy &policy, HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
+        htool::lu_factorization(exec_compat::seq, hmatrix);
+    });
+    py_class.def("lu_factorization", [](exec_compat::parallel_policy &policy, HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
+        htool::lu_factorization(exec_compat::par, hmatrix);
+    });
+#ifdef _OPENMP
+    py_class.def("lu_factorization", [](htool::omp_task_policy<CoefficientPrecision, CoordinatePrecision> &policy, HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix) {
+        htool::lu_factorization(policy, hmatrix);
+    });
+#endif
     py_class.def("cholesky_factorization", [](HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix, char UPLO) {
-        htool::cholesky_factorization(UPLO, hmatrix);
+        htool::cholesky_factorization(exec_compat::par, UPLO, hmatrix);
     });
+    py_class.def("cholesky_factorization", [](exec_compat::sequenced_policy &policy, HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix, char UPLO) {
+        htool::cholesky_factorization(exec_compat::seq, UPLO, hmatrix);
+    });
+    py_class.def("cholesky_factorization", [](exec_compat::parallel_policy &policy, HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix, char UPLO) {
+        htool::cholesky_factorization(exec_compat::par, UPLO, hmatrix);
+    });
+#ifdef _OPENMP
+    py_class.def("cholesky_factorization", [](htool::omp_task_policy<CoefficientPrecision, CoordinatePrecision> &policy, HMatrix<CoefficientPrecision, CoordinatePrecision> &hmatrix, char UPLO) {
+        htool::cholesky_factorization(policy, UPLO, hmatrix);
+    });
+#endif
     py_class.def("lu_solve", [](const Class &self, char trans, const py::array_t<CoefficientPrecision, py::array::f_style> &input) {
         std::vector<ssize_t> shape;
         if (input.ndim() == 1) {
@@ -110,7 +132,7 @@ void declare_HMatrix(py::module &m, const std::string &className) {
             std::fill_n(result.mutable_data(), self.get_target_cluster().get_size(), CoefficientPrecision(0));
 
             char trans = 'N';
-            htool::add_hmatrix_vector_product(trans, CoefficientPrecision(1), self, input.data(), CoefficientPrecision(0), result.mutable_data());
+            htool::add_hmatrix_vector_product(exec_compat::par, trans, CoefficientPrecision(1), self, input.data(), CoefficientPrecision(0), result.mutable_data());
 
             return result;
         },
@@ -131,7 +153,7 @@ void declare_HMatrix(py::module &m, const std::string &className) {
             htool::MatrixView<CoefficientPrecision> output_view(input.shape()[0], input.shape()[1], result.mutable_data());
             char transa = 'N';
             char transb = 'N';
-            htool::add_hmatrix_matrix_product(transa, transb, CoefficientPrecision(1), self, input_view, CoefficientPrecision(0), output_view);
+            htool::add_hmatrix_matrix_product(exec_compat::par, transa, transb, CoefficientPrecision(1), self, input_view, CoefficientPrecision(0), output_view);
 
             return result;
         },

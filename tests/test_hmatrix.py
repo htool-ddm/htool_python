@@ -5,24 +5,39 @@ import numpy as np
 import pytest
 
 import Htool
-from example.advanced.define_custom_low_rank_generator import CustomSVD
+from example.advanced.define_custom_low_rank_generator import (
+    ComplexCustomSVD,
+    CustomSVD,
+)
 from example.create_geometry import create_random_geometries
-from example.define_generators import CustomGenerator
+from example.define_generators import ComplexCustomGenerator, CustomGenerator
 
 
 @pytest.mark.parametrize(
-    "loglevel,symmetry",
+    "loglevel,symmetry,is_complex,policy_name",
     [
-        (logging.INFO, "N"),
-        (logging.DEBUG, "N"),
-        (logging.WARNING, "N"),
-        (logging.ERROR, "N"),
-        (logging.CRITICAL, "N"),
-        (logging.INFO, "S"),
+        (logging.INFO, "N", False, None),
+        (logging.DEBUG, "N", False, None),
+        (logging.WARNING, "N", False, None),
+        (logging.ERROR, "N", False, None),
+        (logging.CRITICAL, "N", False, None),
+        (logging.INFO, "S", False, None),
+        (logging.INFO, "N", False, "par"),
+        (logging.INFO, "N", False, "seq"),
+        (logging.INFO, "N", False, "omp_task"),
+        (logging.INFO, "S", True, None),
     ],
 )
-def test_hmatrix(loglevel, symmetry):
+def test_hmatrix(loglevel, symmetry, is_complex, policy_name):
     logging.basicConfig(level=loglevel)
+
+    policy = None
+    if policy_name == "par":
+        policy = Htool.ParallelPolicy()
+    elif policy_name == "seq":
+        policy = Htool.SequentialPolicy()
+    elif policy_name == "omp_task":
+        policy = Htool.ComplexOmpTaskPolicy() if is_complex else Htool.OmpTaskPolicy()
 
     # Random geometry
     nb_rows = 500
@@ -52,18 +67,37 @@ def test_hmatrix(loglevel, symmetry):
         source_cluster = target_cluster
 
     # Build generator
-    if symmetry == "N":
-        generator = CustomGenerator(target_points, source_points)
+    if is_complex is False:
+        if symmetry == "N":
+            generator = CustomGenerator(target_points, source_points)
+        else:
+            generator = CustomGenerator(target_points, target_points)
     else:
-        generator = CustomGenerator(target_points, target_points)
-
+        if symmetry == "N":
+            generator = ComplexCustomGenerator(target_points, source_points)
+        else:
+            generator = ComplexCustomGenerator(target_points, target_points)
     # Custom low rank generator
-    low_rank_generator = CustomSVD(generator, False)
+    if is_complex is False:
+        low_rank_generator = CustomSVD(generator, False)
+    else:
+        low_rank_generator = ComplexCustomSVD(generator, False)
 
     # Build HMatrix
-    hmatrix_builder = Htool.HMatrixTreeBuilder(epsilon, eta, "N", "N")
+    if is_complex is False:
+        hmatrix_builder = Htool.HMatrixTreeBuilder(epsilon, eta, "N", "N")
+    else:
+        hmatrix_builder = Htool.ComplexHMatrixTreeBuilder(epsilon, eta, "N", "N")
     hmatrix_builder.set_low_rank_generator(low_rank_generator)
-    hmatrix = hmatrix_builder.build(generator, target_cluster, source_cluster)
+    if symmetry == "S":
+        hmatrix_builder.set_block_tree_consistency(True)
+
+    if policy:
+        hmatrix = hmatrix_builder.build(
+            policy, generator, target_cluster, source_cluster
+        )
+    else:
+        hmatrix = hmatrix_builder.build(generator, target_cluster, source_cluster)
     assert hmatrix.shape == (nb_rows, nb_cols)
 
     # Copy
@@ -74,55 +108,68 @@ def test_hmatrix(loglevel, symmetry):
     dense_in_user_numbering = hmatrix.to_dense_in_user_numbering()
 
     # HMatrix vector product
+    dtype = np.float64 if is_complex is False else np.complex128
     np.random.seed(0)
-    x = np.random.rand(nb_cols)
+    if is_complex is False:
+        x = np.random.rand(nb_cols)
+    else:
+        x = np.random.rand(nb_cols) + 1j * np.random.rand(nb_cols)
     y = hmatrix * x
     y_exact = generator.mat_vec(x)
     y_dense = dense_in_user_numbering.dot(x)
     y_copy = copy_hmatrix * x
     assert np.linalg.norm(y - y_exact) / np.linalg.norm(y_exact) < epsilon
     assert np.linalg.norm(y - y_dense) / np.linalg.norm(y_dense) < 1e-10
-    assert np.linalg.norm(y - y_copy) < 1e-10
+    assert np.linalg.norm(y - y_copy) / np.linalg.norm(y) < 1e-10
 
     # HMatrix matrix product
     np.random.seed(0)
-    x = np.random.rand(nb_cols, 2)
+    if is_complex is False:
+        x = np.random.rand(nb_cols, 2)
+    else:
+        x = np.random.rand(nb_cols, 2) + 1j * np.random.rand(nb_cols, 2)
     y = hmatrix @ x
     y_exact = generator.mat_mat(x)
     y_dense = dense_in_user_numbering @ x
     y_copy = copy_hmatrix @ x
     assert np.linalg.norm(y - y_exact) / np.linalg.norm(y_exact) < epsilon
     assert np.linalg.norm(y - y_dense) / np.linalg.norm(y_dense) < 1e-10
-    assert np.linalg.norm(y - y_copy) < 1e-10
+    assert np.linalg.norm(y - y_copy) / np.linalg.norm(y) < 1e-10
 
     if symmetry != "N":
         # HLU factorization
-        copy_hmatrix.lu_factorization()
+        if policy:
+            copy_hmatrix.lu_factorization(policy)
+        else:
+            copy_hmatrix.lu_factorization()
 
         # HLU solve vec
-        x_ref = np.ones(nb_cols)
+        x_ref = np.ones(nb_cols, dtype=dtype)
         y = hmatrix * x_ref
         x = copy_hmatrix.lu_solve("N", y)
         assert np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref) < epsilon
 
         # HLU solve mat
-        x_ref = np.ones((nb_cols, 2))
+        x_ref = np.ones((nb_cols, 2), dtype=dtype)
         y = hmatrix @ x_ref
         x = copy_hmatrix.lu_solve("N", y)
         assert np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref) < epsilon
 
         # Cholesky factorization
         copy_hmatrix = copy.deepcopy(hmatrix)
-        copy_hmatrix.cholesky_factorization("L")
+        if policy:
+            copy_hmatrix.cholesky_factorization(policy, "L")
+        else:
+            copy_hmatrix.cholesky_factorization("L")
 
         # Cholesky solve vec
-        x_ref = np.ones(nb_cols)
+        x_ref = np.ones(nb_cols, dtype=dtype)
         y = hmatrix * x_ref
         x = copy_hmatrix.cholesky_solve("L", y)
         assert np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref) < epsilon
 
         # Cholesky solve mat
-        x_ref = np.ones((nb_cols, 2))
+        x_ref = np.ones((nb_cols, 2), dtype=dtype)
         y = hmatrix @ x_ref
         x = copy_hmatrix.cholesky_solve("L", y)
         assert np.linalg.norm(x - x_ref) / np.linalg.norm(x_ref) < epsilon
